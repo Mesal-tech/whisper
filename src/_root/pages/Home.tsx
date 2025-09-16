@@ -1,23 +1,36 @@
 import { useState, useEffect } from "react";
 import { auth } from "../../lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import type { User } from "firebase/auth";
 import { MdLogout } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 
 function Home() {
   const [user, setUser] = useState<User | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
+      if (!user) {
+        navigate("/auth/signin");
+      }
     });
     return unsubscribe;
-  }, []);
+  }, [navigate]);
 
   if (!user) {
-    // This should never happen due to AuthLayout redirect, but included for safety
-    return null;
+    return null; // Should redirect via useEffect, this is a fallback
   }
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/auth/signin");
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -43,13 +56,7 @@ function Home() {
               </div>
 
               <button
-                onClick={() => {
-                  auth
-                    .signOut()
-                    .catch((error) =>
-                      console.error("Error during logout:", error)
-                    );
-                }}
+                onClick={handleLogout}
                 className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               >
                 <MdLogout className="w-4 h-4" />

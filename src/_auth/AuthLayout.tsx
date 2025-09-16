@@ -10,6 +10,8 @@ function AuthLayout() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         navigate("/");
+      } else if (window.location.pathname !== "/auth/signin") {
+        navigate("/auth/signin");
       }
     });
     return unsubscribe;
