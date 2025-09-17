@@ -1,23 +1,19 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { auth } from "../../lib/firebase";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import type { User } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { MdLogout } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../store/authStore";
 
 function Home() {
-  const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      if (!user) {
-        navigate("/auth/signin");
-      }
-    });
-    return unsubscribe;
-  }, [navigate]);
+    if (!user) {
+      navigate("/auth/signin");
+    }
+  }, [user, navigate]);
 
   if (!user) {
     return null; // Should redirect via useEffect, this is a fallback

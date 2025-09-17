@@ -4,15 +4,18 @@ import { signInWithPopup } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { FcGoogle } from "react-icons/fc";
+import { useAuthStore } from "../store/authStore";
 
 function Signin() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const setUser = useAuthStore((state) => state.setUser);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      setUser(result.user);
       navigate("/");
     } catch (error) {
       console.error("Error during Google login:", error);
