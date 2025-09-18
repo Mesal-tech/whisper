@@ -1,14 +1,11 @@
-// RootLayout.tsx
 import { Outlet } from "react-router-dom";
 import Tabs from "../components/Tabs";
 
 export default function RootLayout() {
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Main content area */}
-      <div className="flex-1">
-        <Outlet />
-      </div>
+    <div className="h-screen overflow-hidden">
+      {/* Main content area (fills available space between header + tabs) */}
+      <Outlet />
 
       {/* Bottom tabs */}
       <Tabs />
