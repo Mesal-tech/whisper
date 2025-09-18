@@ -56,7 +56,7 @@ function Signin() {
       return diff > 0 ? -1 : 1;
     }
   };
-
+  //@ts-ignore
   const handleDragEnd = (event: any, info: any) => {
     const { offset, velocity } = info;
     const swipeThreshold = 50;
