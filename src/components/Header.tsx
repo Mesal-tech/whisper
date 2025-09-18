@@ -64,7 +64,7 @@ export default function Header() {
     <>
       <header className="bg-black shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex justify-between items-center py-4 select-none">
             <img
               src="/assets/images/logo2.svg"
               alt="Whispers"
@@ -87,7 +87,7 @@ export default function Header() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -10 }}
                     transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="profile-popup absolute right-0 top-12 bg-black rounded-lg shadow-lg border w-70 z-50"
+                    className="profile-popup absolute right-0 top-12 bg-black rounded-xl shadow-lg border border-white w-70 z-50"
                   >
                     {/* Profile Header */}
                     <div className="p-4 border-b">
@@ -101,15 +101,15 @@ export default function Header() {
                         />
                         <div className="flex-1">
                           <p className="text-lg font-medium text-white">Anon</p>
-                          <p className="text-xs text-gray-300 break-all">
+                          <p className="text-[12px] text-gray-300 break-all">
                             {user.email}
                           </p>
                         </div>
                         <button
                           onClick={() => setShowProfilePopup(false)}
-                          className="p-1 hover:bg-gray-100 rounded-full"
+                          className="p-1 bg-gray-100 rounded-full"
                         >
-                          <MdClose className="w-4 h-4 text-gray-500" />
+                          <MdClose className="w-4 h-4 text-black" />
                         </button>
                       </div>
                     </div>
