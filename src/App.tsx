@@ -1,3 +1,6 @@
+// src/App.tsx
+// Update the existing App.tsx with the new route
+
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import AuthLayout from "./_auth/AuthLayout";
 import Signin from "./_auth/Signin";
@@ -5,6 +8,7 @@ import RootLayout from "./_root/RootLayout";
 import Home from "./_root/pages/Home";
 import Rooms from "./_root/pages/Rooms";
 import Messages from "./_root/pages/Messages";
+import RoomChat from "./_root/pages/RoomChat";
 
 function App() {
   return (
@@ -19,6 +23,7 @@ function App() {
         <Route element={<RootLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/rooms" element={<Rooms />} />
+          <Route path="/rooms/:id" element={<RoomChat />} />
           <Route path="/messages" element={<Messages />} />
         </Route>
       </Routes>

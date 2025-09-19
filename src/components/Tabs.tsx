@@ -6,8 +6,8 @@ import { useAuthStore } from "../store/authStore";
 
 const tabs = [
   { name: "Home", path: "/", icon: TbHomeFilled },
-  { name: "Messages", path: "/messages", icon: RiMessage3Fill },
   { name: "Rooms", path: "/rooms", icon: HiUsers },
+  { name: "Messages", path: "/messages", icon: RiMessage3Fill },
 ];
 
 export default function ResponsiveNavigation() {
