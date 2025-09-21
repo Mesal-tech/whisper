@@ -17,6 +17,7 @@ import InputBox from "../../components/InputBox";
 import MessageBubble from "../../components/MessageBubble";
 import ThreadReplyModal from "../../components/ThreadReplyModal";
 import { IoIosArrowBack } from "react-icons/io";
+import { FaChevronDown } from "react-icons/fa";
 
 // Message grouping utility functions
 interface GroupedMessage extends Message {
@@ -233,8 +234,7 @@ function RoomChat() {
   if (!room) {
     return (
       <div className="bg-black min-h-screen text-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-        <span className="ml-3">Loading room...</span>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
       </div>
     );
   }
@@ -242,14 +242,12 @@ function RoomChat() {
   const threadCount = messages.filter(
     (msg) => msg.messageType === "thread"
   ).length;
-
-  // Get member count from room data
-  // Assuming your Room type has either a 'members' array or 'memberCount' property
   const memberCount = room.members?.length || 0;
 
   return (
-    <div className="bg-[#111111] h-screen text-white flex flex-col overflow-hidden">
-      <div className="bg-[#111111] flex items-center p-4 border-b border-gray-800 flex-shrink-0 z-40">
+    <div className="bg-[#111111] h-screen text-white flex flex-col overflow-hidden relative">
+      {/* LOCKED HEADER - Fixed Position */}
+      <div className="fixed top-0 left-0 right-0 flex items-center p-4 border-b border-gray-800 z-50 backdrop-blur-md bg-[#111111]/95">
         <button
           onClick={() => navigate("/rooms")}
           className="text-gray-400 hover:text-white mr-4 transition-colors duration-200 px-2 bg-[#373737] py-2 rounded-full"
@@ -272,10 +270,15 @@ function RoomChat() {
         </div>
       </div>
 
+      {/* MESSAGES CONTAINER - Adjusted for fixed header */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto overflow-x-hidden messages-container"
+        className="flex-1 overflow-y-auto overflow-x-hidden messages-container pt-20"
+        style={{
+          paddingTop: "5rem", // Space for fixed header (80px)
+          paddingBottom: "6rem", // Space for fixed input box (96px)
+        }}
       >
         <div className="p-4 min-h-full">
           {messages.length === 0 ? (
@@ -317,19 +320,20 @@ function RoomChat() {
               ))}
             </div>
           )}
-          <div className="h-24 flex-shrink-0" />
         </div>
 
+        {/* SCROLL TO BOTTOM BUTTON - Adjusted position */}
         {!isAtBottom && messages.length > 0 && (
           <button
             onClick={scrollToBottom}
-            className="fixed bottom-32 right-6 bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-full shadow-lg border border-gray-600 transition-all duration-200 z-30"
+            className="fixed bottom-32 right-6 bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-full shadow-lg border border-gray-600 transition-all duration-200 z-40"
           >
-            ↓
+            <FaChevronDown className="text-lg" />
           </button>
         )}
       </div>
 
+      {/* INPUT BOX - Already fixed at bottom */}
       <InputBox
         onSend={sendMessage}
         placeholder={
@@ -344,6 +348,7 @@ function RoomChat() {
         onCancelReply={cancelReply}
       />
 
+      {/* THREAD MODAL */}
       {selectedThread && (
         <ThreadReplyModal
           isOpen={threadModalOpen}
@@ -355,6 +360,23 @@ function RoomChat() {
           roomId={id!}
         />
       )}
+
+      {/* CUSTOM SCROLLBAR STYLES */}
+      <style>{`
+        .messages-container::-webkit-scrollbar {
+          width: 6px;
+        }
+        .messages-container::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .messages-container::-webkit-scrollbar-thumb {
+          background-color: #374151;
+          border-radius: 3px;
+        }
+        .messages-container::-webkit-scrollbar-thumb:hover {
+          background-color: #4b5563;
+        }
+      `}</style>
     </div>
   );
 }
