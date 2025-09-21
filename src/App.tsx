@@ -12,22 +12,24 @@ import RoomChat from "./_root/pages/RoomChat";
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Auth routes */}
-        <Route path="/auth" element={<AuthLayout />}>
-          <Route path="signin" element={<Signin />} />
-        </Route>
+    <div className="fixed inset-0 overflow-hidden">
+      <Router>
+        <Routes>
+          {/* Auth routes */}
+          <Route path="/auth" element={<AuthLayout />}>
+            <Route path="signin" element={<Signin />} />
+          </Route>
 
-        {/* Main app routes with tabs */}
-        <Route element={<RootLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/rooms" element={<Rooms />} />
-          <Route path="/rooms/:id" element={<RoomChat />} />
-          <Route path="/messages" element={<Messages />} />
-        </Route>
-      </Routes>
-    </Router>
+          {/* Main app routes with tabs */}
+          <Route element={<RootLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/rooms" element={<Rooms />} />
+            <Route path="/rooms/:id" element={<RoomChat />} />
+            <Route path="/messages" element={<Messages />} />
+          </Route>
+        </Routes>
+      </Router>
+    </div>
   );
 }
 
