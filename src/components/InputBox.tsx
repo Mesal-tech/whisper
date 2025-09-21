@@ -1,14 +1,180 @@
 import { useState, useRef, useEffect } from "react";
-import { HiPaperAirplane, HiReply, HiX } from "react-icons/hi";
+import { HiPaperAirplane, HiReply, HiX, HiExternalLink } from "react-icons/hi";
 import { FaPaperclip } from "react-icons/fa";
 import type { Message } from "../types";
 
+interface UrlPreview {
+  url: string;
+  title?: string;
+  description?: string;
+  image?: string;
+  favicon?: string;
+  siteName?: string;
+}
+
 interface InputBoxProps {
-  onSend: (message: string, messageType?: "message" | "thread") => void;
+  onSend: (
+    message: string,
+    messageType?: "message" | "thread",
+    preview?: UrlPreview
+  ) => void;
   placeholder?: string;
   disabled?: boolean;
   replyTo?: Message | null;
   onCancelReply?: () => void;
+}
+
+// URL detection regex
+const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+// Extract URLs from text
+function extractUrls(text: string): string[] {
+  const matches = text.match(urlRegex);
+  return matches || [];
+}
+
+// Fetch URL metadata
+async function fetchUrlPreview(url: string): Promise<UrlPreview | null> {
+  try {
+    // Try to fetch the page
+    const response = await fetch(
+      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
+    );
+    const data = await response.json();
+    const html = data.contents;
+
+    // Parse HTML to extract metadata
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+
+    // Extract Open Graph and meta tags
+    const getMetaContent = (property: string) => {
+      const meta =
+        doc.querySelector(`meta[property="${property}"]`) ||
+        doc.querySelector(`meta[name="${property}"]`);
+      return meta?.getAttribute("content") || "";
+    };
+
+    const title =
+      getMetaContent("og:title") ||
+      doc.querySelector("title")?.textContent ||
+      url;
+
+    const description =
+      getMetaContent("og:description") || getMetaContent("description") || "";
+
+    const image = getMetaContent("og:image") || "";
+    const siteName = getMetaContent("og:site_name") || new URL(url).hostname;
+
+    // Try to get favicon
+    let favicon = "";
+    const faviconLink =
+      doc.querySelector('link[rel="icon"]') ||
+      doc.querySelector('link[rel="shortcut icon"]');
+    if (faviconLink) {
+      favicon = faviconLink.getAttribute("href") || "";
+      if (favicon && !favicon.startsWith("http")) {
+        const baseUrl = new URL(url);
+        favicon = `${baseUrl.protocol}//${baseUrl.host}${
+          favicon.startsWith("/") ? "" : "/"
+        }${favicon}`;
+      }
+    } else {
+      // Fallback to default favicon location
+      const baseUrl = new URL(url);
+      favicon = `${baseUrl.protocol}//${baseUrl.host}/favicon.ico`;
+    }
+
+    return {
+      url,
+      title: title.slice(0, 100),
+      description: description.slice(0, 200),
+      image,
+      favicon,
+      siteName,
+    };
+  } catch (error) {
+    console.error("Error fetching URL preview:", error);
+
+    // Fallback: create basic preview from URL
+    try {
+      const urlObj = new URL(url);
+      return {
+        url,
+        title: urlObj.hostname,
+        description: url,
+        siteName: urlObj.hostname,
+        favicon: `${urlObj.protocol}//${urlObj.host}/favicon.ico`,
+      };
+    } catch {
+      return null;
+    }
+  }
+}
+
+function UrlPreviewCard({
+  preview,
+  onRemove,
+}: {
+  preview: UrlPreview;
+  onRemove: () => void;
+}) {
+  const [imageError, setImageError] = useState(false);
+  const [faviconError, setFaviconError] = useState(false);
+
+  return (
+    <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3">
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          {preview.favicon && !faviconError && (
+            <img
+              src={preview.favicon}
+              alt=""
+              className="w-4 h-4 rounded flex-shrink-0"
+              onError={() => setFaviconError(true)}
+            />
+          )}
+          <span className="text-xs text-gray-400 truncate">
+            {preview.siteName || new URL(preview.url).hostname}
+          </span>
+        </div>
+        <button
+          onClick={onRemove}
+          className="text-gray-400 hover:text-white ml-2 p-1 hover:bg-gray-700 rounded transition-colors"
+        >
+          <HiX className="w-3 h-3" />
+        </button>
+      </div>
+
+      <div className="flex gap-3">
+        <div className="flex-1 min-w-0">
+          <h4 className="text-sm font-medium text-white mb-1 line-clamp-2">
+            {preview.title}
+          </h4>
+          {preview.description && (
+            <p className="text-xs text-gray-300 line-clamp-2 mb-2">
+              {preview.description}
+            </p>
+          )}
+          <div className="flex items-center gap-1 text-xs text-blue-400">
+            <HiExternalLink className="w-3 h-3" />
+            <span className="truncate">{new URL(preview.url).hostname}</span>
+          </div>
+        </div>
+
+        {preview.image && !imageError && (
+          <div className="flex-shrink-0">
+            <img
+              src={preview.image}
+              alt=""
+              className="w-16 h-16 object-cover rounded"
+              onError={() => setImageError(true)}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function InputBox({
@@ -21,7 +187,10 @@ function InputBox({
   const [text, setText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isThreadMode, setIsThreadMode] = useState(false);
+  const [urlPreviews, setUrlPreviews] = useState<UrlPreview[]>([]);
+  const [loadingPreviews, setLoadingPreviews] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSend = () => {
     if (!text.trim() || disabled) return;
@@ -37,10 +206,15 @@ function InputBox({
 
     if (!messageText.trim()) return; // Don't send empty messages after removing command
 
-    onSend(messageText.trim(), messageType);
+    // Send message with preview if available
+    const preview = urlPreviews.length > 0 ? urlPreviews[0] : undefined;
+    onSend(messageText.trim(), messageType, preview);
+
     setText("");
     setIsTyping(false);
     setIsThreadMode(false);
+    setUrlPreviews([]);
+    setLoadingPreviews([]);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -57,6 +231,53 @@ function InputBox({
 
     // Check if user is typing a thread command
     setIsThreadMode(value.startsWith("/thread "));
+
+    // Debounce URL detection
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      detectUrls(value);
+    }, 1000);
+  };
+
+  const detectUrls = async (text: string) => {
+    const urls = extractUrls(text);
+
+    if (urls.length === 0) {
+      setUrlPreviews([]);
+      setLoadingPreviews([]);
+      return;
+    }
+
+    // Take only the first URL for preview (like WhatsApp)
+    const firstUrl = urls[0];
+
+    // Check if we already have this preview
+    if (
+      urlPreviews.some((p) => p.url === firstUrl) ||
+      loadingPreviews.includes(firstUrl)
+    ) {
+      return;
+    }
+
+    setLoadingPreviews([firstUrl]);
+
+    try {
+      const preview = await fetchUrlPreview(firstUrl);
+      if (preview) {
+        setUrlPreviews([preview]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch preview:", error);
+    } finally {
+      setLoadingPreviews([]);
+    }
+  };
+
+  const removePreview = (url: string) => {
+    setUrlPreviews((prev) => prev.filter((p) => p.url !== url));
   };
 
   // Auto-resize textarea based on content
@@ -69,6 +290,15 @@ function InputBox({
       textareaRef.current.style.height = `${newHeight}px`;
     }
   }, [text]);
+
+  // Cleanup debounce timer
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-[#111111] z-50">
@@ -108,6 +338,25 @@ function InputBox({
               >
                 <HiX className="w-4 h-4" />
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* URL Previews */}
+        {urlPreviews.map((preview) => (
+          <UrlPreviewCard
+            key={preview.url}
+            preview={preview}
+            onRemove={() => removePreview(preview.url)}
+          />
+        ))}
+
+        {/* Loading Preview */}
+        {loadingPreviews.length > 0 && (
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm text-gray-400">Loading preview...</span>
             </div>
           </div>
         )}

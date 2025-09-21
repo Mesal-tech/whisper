@@ -26,6 +26,46 @@ interface BottomSheetProps {
   showDelete: boolean;
 }
 
+// URL detection regex
+const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+// Component to render text with clickable URLs
+function TextWithLinks({
+  text,
+  className = "",
+}: {
+  text: string;
+  className?: string;
+}) {
+  const renderTextWithLinks = (text: string) => {
+    const parts = text.split(" ");
+
+    return parts.map((word, index) => {
+      if (urlRegex.test(word)) {
+        // Reset regex lastIndex to avoid issues with global flag
+        urlRegex.lastIndex = 0;
+        return (
+          <span key={index}>
+            <a
+              href={word}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white underline hover:text-blue-200 transition-colors"
+              onClick={(e) => e.stopPropagation()} // Prevent triggering parent click events
+            >
+              {word}
+            </a>
+            {index < parts.length - 1 ? " " : ""}
+          </span>
+        );
+      }
+      return word + (index < parts.length - 1 ? " " : "");
+    });
+  };
+
+  return <span className={className}>{renderTextWithLinks(text)}</span>;
+}
+
 function BottomSheet({
   isOpen,
   onClose,
@@ -287,9 +327,10 @@ function MessageBubble({
             )}
 
             <div className="pl-2">
-              <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-gray-100">
-                {message.text}
-              </p>
+              <TextWithLinks
+                text={message.text}
+                className="text-sm leading-relaxed break-words whitespace-pre-wrap text-gray-100"
+              />
             </div>
 
             {showTimestamp && message.timestamp && (
@@ -399,9 +440,10 @@ function MessageBubble({
                 </div>
               )}
 
-              <p className="text-lg leading-relaxed break-words whitespace-pre-wrap">
-                {message.text}
-              </p>
+              <TextWithLinks
+                text={message.text}
+                className="text-lg leading-relaxed break-words whitespace-pre-wrap"
+              />
             </div>
           </div>
         </motion.div>
