@@ -133,6 +133,7 @@ function MessageBubble({
   };
 
   const handleDrag = (
+    //@ts-ignore
     event: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo
   ) => {
@@ -150,6 +151,7 @@ function MessageBubble({
   };
 
   const handleDragEnd = (
+    //@ts-ignore
     event: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo
   ) => {
