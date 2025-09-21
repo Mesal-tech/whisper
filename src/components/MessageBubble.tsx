@@ -15,7 +15,7 @@ interface MessageBubbleProps {
   allMessages?: Message[];
   onScrollToMessage?: (messageId: string) => void;
   isHighlighted?: boolean;
-  onThreadReply?: (message: Message) => void; // New prop for thread reply
+  onThreadReply?: (message: Message) => void;
 }
 
 interface BottomSheetProps {
@@ -42,7 +42,6 @@ function TextWithLinks({
 
     return parts.map((word, index) => {
       if (urlRegex.test(word)) {
-        // Reset regex lastIndex to avoid issues with global flag
         urlRegex.lastIndex = 0;
         return (
           <span key={index}>
@@ -51,7 +50,7 @@ function TextWithLinks({
               target="_blank"
               rel="noopener noreferrer"
               className="text-white underline hover:text-blue-200 transition-colors"
-              onClick={(e) => e.stopPropagation()} // Prevent triggering parent click events
+              onClick={(e) => e.stopPropagation()}
             >
               {word}
             </a>
@@ -165,7 +164,7 @@ function MessageBubble({
   };
 
   const handleDragStart = () => {
-    if (message.messageType === "thread") return; // No drag for threads
+    if (message.messageType === "thread") return;
     isDragging.current = true;
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
@@ -178,7 +177,7 @@ function MessageBubble({
     event: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo
   ) => {
-    if (message.messageType === "thread") return; // No drag for threads
+    if (message.messageType === "thread") return;
     const threshold = 80;
     const dragValue = info.offset.x;
 
@@ -194,7 +193,7 @@ function MessageBubble({
     event: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo
   ) => {
-    if (message.messageType === "thread") return; // No drag for threads
+    if (message.messageType === "thread") return;
     const threshold = 60;
     const velocity = info.velocity.x;
     const dragValue = info.offset.x;
@@ -408,7 +407,7 @@ function MessageBubble({
             }`}
           >
             <div className="flex flex-col">
-              {isFirstInTimeGroup && (
+              {isFirstInTimeGroup && !isCurrentUser && (
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <span className="text-xs opacity-70 font-medium">~anon</span>
                 </div>
@@ -460,12 +459,20 @@ function MessageBubble({
                 <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
               </div>
             ) : showTimestamp && message.timestamp ? (
-              <div className="flex items-center gap-1 justify-end">
+              <div
+                className={`flex items-center gap-1 ${
+                  isCurrentUser ? "justify-end" : "justify-start"
+                }`}
+              >
                 <span className="text-[12px]">
                   {formatTime(message.timestamp)}
                 </span>
-                <span> • </span>
-                <span className="text-[12px]"> Sent</span>
+                {isCurrentUser && (
+                  <>
+                    <span> • </span>
+                    <span className="text-[12px]"> Sent</span>
+                  </>
+                )}
               </div>
             ) : null}
           </div>
