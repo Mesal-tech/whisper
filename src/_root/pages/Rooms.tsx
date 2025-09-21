@@ -1,20 +1,21 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiPlus, FiMessageCircle } from "react-icons/fi";
-import { auth, db } from "../../lib/firebase";
-import {
-  collection,
-  addDoc,
-  onSnapshot,
-  serverTimestamp,
-} from "firebase/firestore";
+import { FiPlus } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuthStore } from "../../store/authStore";
+import { useRoomStore } from "../../store/roomStore";
 import type { Room } from "../../types";
+import emptyRoomImage from "/assets/images/empty-folder.png";
+import bgImage from "/assets/images/shh.jpeg";
 
 const EmptyRooms = () => (
-  <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-    <FiMessageCircle size={48} className="mb-4 opacity-50" />
-    <h3 className="text-lg font-medium mb-2">No rooms yet</h3>
+  <div className="flex flex-col items-center justify-center h-full mt-20">
+    <img
+      src={emptyRoomImage}
+      alt="No rooms found"
+      className="w-50 h-50 mb-6 opacity-70"
+    />
+    <h3 className="text-xl font-medium mb-2">No rooms Found</h3>
     <p className="text-sm text-center max-w-xs">
       Create your first room to start chatting with others
     </p>
@@ -42,32 +43,49 @@ const RoomItem = ({ room, onClick }: { room: Room; onClick: () => void }) => (
     onClick={onClick}
   >
     {/* Avatar */}
-    <div className="w-12 h-12 bg-orange-400 rounded-full flex items-center justify-center text-white font-semibold text-lg mr-3">
-      {room.avatar}
+    <div
+      className="w-14 h-14 rounded-full flex items-center justify-center text-white font-semibold text-xl mr-3 bg-cover bg-center"
+      style={{ backgroundImage: `url(${bgImage})` }}
+    >
+      {/* {room.avatar} */}
     </div>
 
     {/* Room Info */}
     <div className="flex-1 min-w-0">
       <div className="flex items-center justify-between mb-1">
-        <h3 className="text-white font-medium truncate text-lg">{room.name}</h3>
-        <span className="text-gray-400 text-sm">
-          {room.timestamp ? timeAgo(room.timestamp.toDate()) : ""}
+        <h3 className="text-white font-medium truncate text-xl">{room.name}</h3>
+        <span className="text-gray-400 text-md">
+          {room.timestamp && room.timestamp.toDate
+            ? timeAgo(room.timestamp.toDate())
+            : "Just now"}
         </span>
       </div>
-      <p className="text-gray-400 text-sm truncate">{room.lastMessage}</p>
+      <p className="text-gray-400 text-sm truncate">
+        {room.lastMessage || "No messages yet"}
+      </p>
     </div>
   </div>
 );
 
 function Rooms() {
   const navigate = useNavigate();
-  const [rooms, setRooms] = useState<Room[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [roomName, setRoomName] = useState("");
   const [roomBio, setRoomBio] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
+
+  // Store hooks
+  const { user } = useAuthStore();
+  const {
+    rooms,
+    isLoading,
+    error,
+    subscribeToRooms,
+    unsubscribeFromRooms,
+    createRoom,
+    clearRooms,
+  } = useRoomStore();
+
   const hasRooms = rooms.length > 0;
-  const user = auth.currentUser;
 
   useEffect(() => {
     if (!user) {
@@ -75,48 +93,39 @@ function Rooms() {
       return;
     }
 
-    const unsubscribe = onSnapshot(collection(db, "rooms"), (snap) => {
-      const filteredRooms = snap.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() } as Room))
-        .filter(
-          (room) =>
-            room.creatorId === user.uid ||
-            (room.members && room.members.includes(user.uid))
-        );
-      setRooms(filteredRooms);
-    });
-    return unsubscribe;
-  }, [user, navigate]);
+    // Subscribe to rooms when component mounts and user is available
+    subscribeToRooms(user.uid);
 
-  const createRoom = async () => {
-    if (!roomName || !roomBio) return;
+    // Cleanup subscription when component unmounts or user changes
+    return () => {
+      unsubscribeFromRooms();
+    };
+  }, [user, navigate, subscribeToRooms, unsubscribeFromRooms]);
+
+  // Clear rooms when user logs out
+  useEffect(() => {
     if (!user) {
-      navigate("/auth/signin");
-      return;
+      clearRooms();
     }
-    setIsCreating(true);
+  }, [user, clearRooms]);
+
+  const handleCreateRoom = async () => {
+    if (!roomName || !roomBio || !user) return;
+
     try {
-      await addDoc(collection(db, "rooms"), {
+      await createRoom({
         name: roomName,
         bio: roomBio,
         creatorId: user.uid,
-        createdAt: serverTimestamp(),
-        lastMessage: "",
-        timestamp: serverTimestamp(),
-        avatar: roomName
-          .split(" ")
-          .map((w) => w[0])
-          .join("")
-          .toUpperCase(),
-        members: [user.uid],
       });
+
+      // Reset form and close modal
       setShowModal(false);
       setRoomName("");
       setRoomBio("");
     } catch (error) {
       console.error("Error creating room:", error);
-    } finally {
-      setIsCreating(false);
+      // Error is already handled in the store
     }
   };
 
@@ -141,9 +150,20 @@ function Rooms() {
         </button>
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-900/20 border border-red-500/30 text-red-300 p-3 m-4 rounded">
+          {error}
+        </div>
+      )}
+
       {/* Content */}
       <div className="flex-1">
-        {hasRooms ? (
+        {isLoading && rooms.length === 0 ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          </div>
+        ) : hasRooms ? (
           <div className="divide-y divide-gray-800">
             {rooms.map((room) => (
               <RoomItem
@@ -191,7 +211,7 @@ function Rooms() {
                   onChange={(e) => setRoomName(e.target.value)}
                   placeholder="Room name"
                   className="bg-gray-900 text-white p-2 rounded w-full"
-                  disabled={isCreating}
+                  disabled={isLoading}
                 />
               </div>
               <div className="mb-4">
@@ -207,23 +227,23 @@ function Rooms() {
                   onChange={(e) => setRoomBio(e.target.value)}
                   placeholder="Room bio"
                   className="bg-gray-900 text-white p-2 rounded w-full h-24 resize-none"
-                  disabled={isCreating}
+                  disabled={isLoading}
                 />
               </div>
               <div className="flex justify-end">
                 <button
                   onClick={closeModal}
                   className="text-gray-400 hover:text-white mr-4"
-                  disabled={isCreating}
+                  disabled={isLoading}
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={createRoom}
-                  disabled={!roomName || !roomBio || isCreating}
+                  onClick={handleCreateRoom}
+                  disabled={!roomName || !roomBio || isLoading}
                   className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-blue-300 disabled:cursor-not-allowed"
                 >
-                  {isCreating ? "Creating" : "Create"}
+                  {isLoading ? "Creating..." : "Create"}
                 </button>
               </div>
             </motion.div>

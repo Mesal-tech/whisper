@@ -82,7 +82,7 @@ function BottomSheet({
         animate={{ y: isOpen ? 0 : "100%" }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 rounded-t-2xl p-6 z-50"
+        className="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-gray-700 rounded-t-4xl p-6 z-60"
       >
         <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mb-4" />
 
