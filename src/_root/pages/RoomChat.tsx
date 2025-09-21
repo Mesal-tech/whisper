@@ -242,9 +242,10 @@ function RoomChat() {
   const threadCount = messages.filter(
     (msg) => msg.messageType === "thread"
   ).length;
-  const messageCount = messages.filter(
-    (msg) => msg.messageType === "message"
-  ).length;
+
+  // Get member count from room data
+  // Assuming your Room type has either a 'members' array or 'memberCount' property
+  const memberCount = room.members?.length || 0;
 
   return (
     <div className="bg-[#111111] h-screen text-white flex flex-col overflow-hidden">
@@ -258,7 +259,7 @@ function RoomChat() {
         <div className="flex-1">
           <h1 className="text-xl font-semibold">{room.name}</h1>
           <p className="text-sm text-gray-400">
-            {messageCount} {messageCount === 1 ? "message" : "messages"}
+            {memberCount} {memberCount === 1 ? "member" : "members"}
             {threadCount > 0 && (
               <>
                 {" • "}
