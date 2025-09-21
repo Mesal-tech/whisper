@@ -49,7 +49,7 @@ const RoomItem = ({ room, onClick }: { room: Room; onClick: () => void }) => (
     {/* Room Info */}
     <div className="flex-1 min-w-0">
       <div className="flex items-center justify-between mb-1">
-        <h3 className="text-white font-medium truncate">{room.name}</h3>
+        <h3 className="text-white font-medium truncate text-lg">{room.name}</h3>
         <span className="text-gray-400 text-sm">
           {room.timestamp ? timeAgo(room.timestamp.toDate()) : ""}
         </span>
@@ -131,7 +131,7 @@ function Rooms() {
       {/* Header */}
       <div className="bg-[#111111] flex items-center justify-between p-4 border-b border-gray-800">
         <div className="flex items-center">
-          <h1 className="text-2xl font-semibold">Rooms</h1>
+          <h1 className="text-3xl font-semibold">Rooms</h1>
         </div>
         <button
           className="text-gray-400 hover:text-white transition-colors"

@@ -429,7 +429,7 @@ function MessageBubble({
                 </div>
               )}
 
-              <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
+              <p className="text-md leading-relaxed break-words whitespace-pre-wrap">
                 {message.text}
               </p>
             </div>
