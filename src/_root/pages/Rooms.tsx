@@ -127,9 +127,9 @@ function Rooms() {
   };
 
   return (
-    <div className="bg-black min-h-screen text-white">
+    <div className="bg-[#111111] min-h-screen text-white">
       {/* Header */}
-      <div className="bg-black flex items-center justify-between p-4 border-b border-gray-800">
+      <div className="bg-[#111111] flex items-center justify-between p-4 border-b border-gray-800">
         <div className="flex items-center">
           <h1 className="text-2xl font-semibold">Rooms</h1>
         </div>

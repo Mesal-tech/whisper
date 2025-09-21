@@ -62,7 +62,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="fixed top-0 w-full z-50 bg-black shadow-sm border-b md:hidden">
+      <header className="fixed top-0 w-full z-50 bg-[#111111] md:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4 select-none">
             <img

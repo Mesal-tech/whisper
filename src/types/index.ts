@@ -18,4 +18,6 @@ export interface Message {
   text: string;
   userId: string;
   timestamp: Timestamp;
+  messageType: "message" | "thread";
+  replyTo?: string | null;
 }

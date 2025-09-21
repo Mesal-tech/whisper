@@ -51,7 +51,7 @@ export default function ResponsiveNavigation() {
       </aside>
 
       {/* Mobile Bottom Tabs */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-black border-t shadow-md flex justify-around items-center h-16 rounded-tl-2xl rounded-tr-2xl z-50">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#111111] shadow-md flex justify-around items-center h-16 rounded-tl-2xl rounded-tr-2xl z-50">
         {tabs.map((tab) => (
           <NavLink
             key={tab.path}

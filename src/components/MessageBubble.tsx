@@ -1,0 +1,473 @@
+import { useState, useRef } from "react";
+import { motion, useMotionValue, useTransform } from "framer-motion";
+import type { PanInfo } from "framer-motion";
+import { HiReply, HiTrash, HiClipboardCopy, HiChatAlt2 } from "react-icons/hi";
+import type { Message } from "../types";
+
+interface MessageBubbleProps {
+  message: Message;
+  isCurrentUser: boolean;
+  onReply?: (message: Message) => void;
+  onDelete?: (messageId: string) => void;
+  showTimestamp?: boolean;
+  isLastInTimeGroup?: boolean;
+  isFirstInTimeGroup?: boolean;
+  allMessages?: Message[];
+  onScrollToMessage?: (messageId: string) => void;
+  isHighlighted?: boolean;
+}
+
+interface BottomSheetProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCopy: () => void;
+  onDelete?: () => void;
+  showDelete: boolean;
+}
+
+function BottomSheet({
+  isOpen,
+  onClose,
+  onCopy,
+  onDelete,
+  showDelete,
+}: BottomSheetProps) {
+  return (
+    <>
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50" onClick={onClose} />
+      )}
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: isOpen ? 0 : "100%" }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 rounded-t-2xl p-6 z-50"
+      >
+        <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mb-4" />
+
+        <div className="space-y-3">
+          <button
+            onClick={() => {
+              onCopy();
+              onClose();
+            }}
+            className="flex items-center gap-3 w-full p-3 text-left text-white hover:bg-gray-800 rounded-lg transition-colors"
+          >
+            <HiClipboardCopy className="w-5 h-5 text-gray-400" />
+            <span>Copy message</span>
+          </button>
+
+          {showDelete && onDelete && (
+            <button
+              onClick={() => {
+                onDelete();
+                onClose();
+              }}
+              className="flex items-center gap-3 w-full p-3 text-left text-red-400 hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              <HiTrash className="w-5 h-5" />
+              <span>Delete message</span>
+            </button>
+          )}
+        </div>
+
+        <button
+          onClick={onClose}
+          className="w-full mt-4 p-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
+        >
+          Cancel
+        </button>
+      </motion.div>
+    </>
+  );
+}
+
+function MessageBubble({
+  message,
+  isCurrentUser,
+  onReply,
+  onDelete,
+  showTimestamp = true,
+  isLastInTimeGroup = true,
+  isFirstInTimeGroup = true,
+  allMessages = [],
+  onScrollToMessage,
+  isHighlighted = false,
+}: MessageBubbleProps) {
+  const [showBottomSheet, setShowBottomSheet] = useState(false);
+  const dragX = useMotionValue(0);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const isDragging = useRef(false);
+
+  // Transform drag value to opacity for reply icon - all messages swipe left
+  const replyIconOpacity = useTransform(dragX, [-80, -40, 0], [1, 0.7, 0]);
+
+  // Find the message being replied to
+  const repliedToMessage = message.replyTo
+    ? allMessages.find((msg) => msg.id === message.replyTo)
+    : null;
+
+  const handleReplyClick = () => {
+    if (repliedToMessage && onScrollToMessage) {
+      onScrollToMessage(repliedToMessage.id);
+    }
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(message.text);
+      // You might want to show a toast notification here
+    } catch (err) {
+      console.error("Failed to copy message:", err);
+    }
+  };
+
+  const handleDragStart = () => {
+    isDragging.current = true;
+    // Clear any existing long press timer
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handleDrag = (
+    event: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo
+  ) => {
+    const threshold = 80;
+    const dragValue = info.offset.x;
+
+    // Only allow swipe left for all messages
+    if (dragValue < 0) {
+      // Constrain the drag to not go beyond the threshold
+      dragX.set(Math.max(dragValue, -threshold));
+    } else {
+      // Don't allow right swipes
+      dragX.set(0);
+    }
+  };
+
+  const handleDragEnd = (
+    event: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo
+  ) => {
+    const threshold = 60; // Slightly lower threshold for triggering
+    const velocity = info.velocity.x;
+    const dragValue = info.offset.x;
+
+    // Trigger reply if swiped left far enough or with enough velocity
+    const shouldReply = dragValue < -threshold || velocity < -500;
+
+    if (shouldReply && onReply) {
+      onReply(message);
+      // Add haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }
+
+    // Always snap back to original position
+    dragX.set(0);
+    isDragging.current = false;
+  };
+
+  const handleLongPressStart = () => {
+    if (isDragging.current) return;
+
+    longPressTimer.current = setTimeout(() => {
+      setShowBottomSheet(true);
+      // Add haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(100);
+      }
+    }, 500); // 500ms for long press
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const formatTime = (timestamp: any) => {
+    if (!timestamp) return "";
+    const date = timestamp.toDate();
+    return date
+      .toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })
+      .toLowerCase();
+  };
+
+  const isSending = !message.timestamp;
+  const isThread = message.messageType === "thread";
+
+  // Adjust spacing based on position in group
+  const getMarginTop = () => {
+    if (isFirstInTimeGroup) return "mt-4";
+    return "mt-1";
+  };
+
+  // Adjust border radius based on position in group and message type
+  const getBorderRadius = () => {
+    if (isThread) {
+      return "rounded-lg";
+    }
+
+    if (isCurrentUser) {
+      if (isFirstInTimeGroup && isLastInTimeGroup) {
+        return "rounded-2xl rounded-br-md";
+      } else if (isFirstInTimeGroup) {
+        return "rounded-2xl rounded-br-lg";
+      } else if (isLastInTimeGroup) {
+        return "rounded-2xl rounded-br-md";
+      } else {
+        return "rounded-2xl rounded-br-lg";
+      }
+    } else {
+      if (isFirstInTimeGroup && isLastInTimeGroup) {
+        return "rounded-2xl rounded-bl-md";
+      } else if (isFirstInTimeGroup) {
+        return "rounded-2xl rounded-bl-lg";
+      } else if (isLastInTimeGroup) {
+        return "rounded-2xl rounded-bl-md";
+      } else {
+        return "rounded-2xl rounded-bl-lg";
+      }
+    }
+  };
+
+  // Thread messages have different styling
+  if (isThread) {
+    return (
+      <div className={`flex group relative select-none ${getMarginTop()}`}>
+        <motion.div
+          className="w-full relative"
+          drag="x"
+          dragConstraints={{ left: -100, right: 0 }}
+          dragElastic={0.1}
+          dragMomentum={false}
+          style={{ x: dragX }}
+          onDragStart={handleDragStart}
+          onDrag={handleDrag}
+          onDragEnd={handleDragEnd}
+          onPointerDown={handleLongPressStart}
+          onPointerUp={handleLongPressEnd}
+          onPointerLeave={handleLongPressEnd}
+        >
+          {/* Reply Icon for Thread */}
+          <motion.div
+            style={{ opacity: replyIconOpacity }}
+            className="absolute top-1/2 -translate-y-1/2 -left-12 w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center"
+          >
+            <HiReply className="w-4 h-4 text-white" />
+          </motion.div>
+
+          {/* Thread Container */}
+          <div
+            className={`w-full border-l-4 border-purple-500 backdrop-blur-sm p-4 ${getBorderRadius()} transition-all duration-200 ${
+              isHighlighted
+                ? "bg-purple-500/30 shadow-lg shadow-purple-500/20"
+                : "bg-purple-500/10 hover:bg-purple-500/15"
+            }`}
+          >
+            {/* Thread Header */}
+            <div className="flex items-center gap-2 mb-3">
+              <HiChatAlt2 className="w-4 h-4 text-purple-400" />
+              <span className="text-xs font-medium text-purple-300">
+                Thread
+              </span>
+              <span className="text-xs text-gray-400">by ~anon</span>
+              {isSending && (
+                <div className="flex items-center gap-1 ml-auto">
+                  <span className="text-xs text-gray-400">Sending</span>
+                  <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse" />
+                </div>
+              )}
+            </div>
+
+            {/* Reply Preview for Thread */}
+            {repliedToMessage && (
+              <div
+                className="mb-3 p-2 bg-purple-500/20 border border-purple-500/30 rounded cursor-pointer hover:bg-purple-500/30 transition-colors"
+                onClick={handleReplyClick}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <HiReply className="w-3 h-3 text-purple-400" />
+                  <span className="text-xs text-purple-300">
+                    Replying to ~anon
+                    {repliedToMessage.messageType === "thread" && " (Thread)"}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-300 truncate">
+                  {repliedToMessage.text.length > 60
+                    ? `${repliedToMessage.text.substring(0, 60)}...`
+                    : repliedToMessage.text}
+                </p>
+              </div>
+            )}
+
+            {/* Thread Content */}
+            <div className="pl-2">
+              <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-gray-100">
+                {message.text}
+              </p>
+            </div>
+
+            {/* Thread Footer */}
+            {showTimestamp && message.timestamp && (
+              <div className="flex items-center justify-between mt-3 pt-2 border-t border-purple-500/20">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span>{formatTime(message.timestamp)}</span>
+                  <span>•</span>
+                  <span>Thread</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        <BottomSheet
+          isOpen={showBottomSheet}
+          onClose={() => setShowBottomSheet(false)}
+          onCopy={copyToClipboard}
+          onDelete={onDelete ? () => onDelete(message.id) : undefined}
+          showDelete={isCurrentUser && !!onDelete}
+        />
+      </div>
+    );
+  }
+
+  // Regular message rendering
+  return (
+    <div
+      className={`flex group relative select-none ${getMarginTop()} ${
+        isCurrentUser ? "justify-end" : "justify-start"
+      }`}
+    >
+      <div
+        className={`max-w-[40vh] lg:max-w-md relative ${
+          isCurrentUser ? "ml-auto" : "mr-auto"
+        }`}
+      >
+        <motion.div
+          drag="x"
+          dragConstraints={{ left: -100, right: 0 }}
+          dragElastic={0.1}
+          dragMomentum={false}
+          style={{ x: dragX }}
+          onDragStart={handleDragStart}
+          onDrag={handleDrag}
+          onDragEnd={handleDragEnd}
+          onPointerDown={handleLongPressStart}
+          onPointerUp={handleLongPressEnd}
+          onPointerLeave={handleLongPressEnd}
+          className="relative"
+        >
+          {/* Reply Icon */}
+          <motion.div
+            style={{ opacity: replyIconOpacity }}
+            className="absolute top-1/2 -translate-y-1/2 -left-12 w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center"
+          >
+            <HiReply className="w-4 h-4 text-white" />
+          </motion.div>
+
+          {/* Message Bubble */}
+          <div
+            className={`p-3 select-none shadow-sm transition-all duration-200 hover:shadow-md ${getBorderRadius()} ${
+              isSending
+                ? "bg-gray-600 text-white"
+                : isCurrentUser
+                ? isHighlighted
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                  : "bg-blue-500 text-white"
+                : isHighlighted
+                ? "bg-gray-700 text-white shadow-lg shadow-gray-500/20"
+                : "bg-gray-800 text-white"
+            }`}
+          >
+            {/* Message Content */}
+            <div className="flex flex-col">
+              {/* Only show username on first message in time group */}
+              {isFirstInTimeGroup && (
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <span className="text-xs opacity-70 font-medium">~anon</span>
+                </div>
+              )}
+
+              {/* Reply Preview for Regular Messages */}
+              {repliedToMessage && (
+                <div
+                  className={`mb-2 p-2 rounded border-l-2 cursor-pointer transition-all duration-200 ${
+                    isCurrentUser
+                      ? "bg-blue-600/30 border-blue-300 hover:bg-blue-600/40"
+                      : "bg-gray-700/50 border-gray-400 hover:bg-gray-700/70"
+                  }`}
+                  onClick={handleReplyClick}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <HiReply className="w-3 h-3 opacity-60" />
+                    <span className="text-xs opacity-70">
+                      Replying to ~anon
+                      {repliedToMessage.messageType === "thread" && (
+                        <span className="text-purple-300 ml-1">(Thread)</span>
+                      )}
+                    </span>
+                  </div>
+                  <p className="text-xs opacity-80 truncate">
+                    {repliedToMessage.text.length > 50
+                      ? `${repliedToMessage.text.substring(0, 50)}...`
+                      : repliedToMessage.text}
+                  </p>
+                </div>
+              )}
+
+              <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
+                {message.text}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Timestamp/Status below bubble */}
+        {isLastInTimeGroup && (
+          <div
+            className={`mt-1 text-xs text-gray-400 ${
+              isCurrentUser ? "text-right" : "text-left"
+            }`}
+          >
+            {isSending ? (
+              <div className="flex items-center gap-1 justify-end">
+                <span>Sending</span>
+                <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
+              </div>
+            ) : showTimestamp && message.timestamp ? (
+              <div className="flex items-center gap-1 justify-end">
+                <span className="text-[12px]">
+                  {formatTime(message.timestamp)}
+                </span>
+                <span> • </span>
+                <span className="text-[12px]"> Sent</span>
+              </div>
+            ) : null}
+          </div>
+        )}
+      </div>
+
+      <BottomSheet
+        isOpen={showBottomSheet}
+        onClose={() => setShowBottomSheet(false)}
+        onCopy={copyToClipboard}
+        onDelete={onDelete ? () => onDelete(message.id) : undefined}
+        showDelete={isCurrentUser && !!onDelete}
+      />
+    </div>
+  );
+}
+
+export default MessageBubble;
