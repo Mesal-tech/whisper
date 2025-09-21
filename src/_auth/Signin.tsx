@@ -1,16 +1,32 @@
 import { useState } from "react";
-import { auth, googleProvider } from "../lib/firebase";
+import { auth, googleProvider, db } from "../lib/firebase";
 import { signInWithPopup } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { Timestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { FcGoogle } from "react-icons/fc";
 import { useAuthStore } from "../store/authStore";
+import { useUserStore } from "../store/userStore"; // Import the new user store
 import { motion, AnimatePresence } from "framer-motion";
+import type { User } from "../types";
+
+// Function to generate a random username
+const generateRandomUsername = () => {
+  const adjectives = ["Cool", "Funny", "Brave", "Swift", "Clever", "Bold"];
+  const nouns = ["Panda", "Tiger", "Eagle", "Fox", "Wolf", "Bear"];
+  const randomAdjective =
+    adjectives[Math.floor(Math.random() * adjectives.length)];
+  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+  const randomNumber = Math.floor(Math.random() * 1000);
+  return `${randomAdjective}${randomNoun}${randomNumber}`;
+};
 
 function Signin() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const setUser = useAuthStore((state) => state.setUser);
+  const setAuthUser = useAuthStore((state) => state.setUser);
+  const { setUser, subscribeToUser } = useUserStore(); // Use the user store
   const [currentSlide, setCurrentSlide] = useState(0);
   const [animationDirection, setAnimationDirection] = useState(0);
 
@@ -18,17 +34,17 @@ function Signin() {
     {
       image:
         "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=300&h=400&fit=crop&crop=entropy&auto=format",
-      text: "Bruh",
+      text: "Welcome to our amazing app",
     },
     {
       image:
         "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=300&h=400&fit=crop&crop=entropy&auto=format",
-      text: "Bruh",
+      text: "Connect with friends worldwide",
     },
     {
       image:
         "https://images.unsplash.com/photo-1758078911728-f697564fb116?w=300&h=400&fit=crop&crop=entropy&auto=format",
-      text: "Bruh",
+      text: "Share your moments",
     },
   ];
 
@@ -36,17 +52,51 @@ function Signin() {
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      setUser(result.user);
+      const firebaseUser = result.user;
+
+      // Check if user document exists in Firestore
+      const userDocRef = doc(db, "users", firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      let userData: User;
+
+      if (!userDoc.exists()) {
+        // Create a new user document
+        userData = {
+          id: firebaseUser.uid,
+          userName: generateRandomUsername(),
+          email: firebaseUser.email || "",
+          createdAt: Timestamp.now(),
+          avatar: firebaseUser.photoURL || "",
+          bio: "",
+        };
+        await setDoc(userDocRef, userData);
+      } else {
+        // Get existing user data
+        userData = userDoc.data() as User;
+      }
+
+      // Set both auth and user data
+      setAuthUser(firebaseUser);
+      setUser(userData);
+
+      // Start real-time subscription to user data
+      subscribeToUser(firebaseUser.uid);
+
       navigate("/");
     } catch (error) {
-      console.error("Error during Google login:", error);
+      console.error("Error during Google login or user creation:", error);
     } finally {
       setLoading(false);
     }
   };
 
   // Function to calculate the proper direction for circular carousel
-  const calculateDirection = (from: any, to: any, totalSlides: any) => {
+  const calculateDirection = (
+    from: number,
+    to: number,
+    totalSlides: number
+  ) => {
     const diff = to - from;
     const absDiff = Math.abs(diff);
 
@@ -89,7 +139,7 @@ function Signin() {
     }
   };
 
-  const handleProgressClick = (index: any) => {
+  const handleProgressClick = (index: number) => {
     if (index !== currentSlide) {
       const direction = calculateDirection(currentSlide, index, slides.length);
       setAnimationDirection(direction);
@@ -98,7 +148,7 @@ function Signin() {
   };
 
   const slideVariants = {
-    initial: (direction: any) => ({
+    initial: (direction: number) => ({
       opacity: 0,
       x: direction * 300,
     }),
@@ -106,7 +156,7 @@ function Signin() {
       opacity: 1,
       x: 0,
     },
-    exit: (direction: any) => ({
+    exit: (direction: number) => ({
       opacity: 0,
       x: direction * -300,
     }),

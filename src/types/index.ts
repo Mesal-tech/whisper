@@ -1,5 +1,14 @@
 import { Timestamp } from "firebase/firestore";
 
+export interface User {
+  id: string;
+  userName: string;
+  email: string;
+  createdAt: Timestamp;
+  avatar?: string;
+  bio?: string;
+}
+
 export interface Room {
   id: string;
   name: string;

@@ -17,6 +17,7 @@ import type { Room, Message } from "../../types";
 import InputBox from "../../components/InputBox";
 import MessageBubble from "../../components/MessageBubble";
 import ThreadReplyModal from "../../components/ThreadReplyModal";
+import { useUserStore, useUsername } from "../../store/userStore"; // Import userStore
 import { IoIosArrowBack } from "react-icons/io";
 import { FaEllipsisV } from "react-icons/fa";
 import { FaChevronDown } from "react-icons/fa";
@@ -84,6 +85,8 @@ function areMessagesInSameTimeGroup(
 function RoomChat() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const username = useUsername(); // Get username from store
+  const { fetchUser, subscribeToUser } = useUserStore(); // Get userStore actions
   const [room, setRoom] = useState<Room | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, setIsSending] = useState(false);
@@ -103,6 +106,23 @@ function RoomChat() {
   const groupedMessages = useMemo(() => {
     return groupMessagesByTime(messages);
   }, [messages]);
+
+  // Initialize user data when component mounts
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user && !username) {
+      // If we have auth user but no username, fetch user data
+      fetchUser(user.uid);
+    }
+
+    if (user) {
+      // Subscribe to real-time user updates
+      const unsubscribe = subscribeToUser(user.uid);
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    }
+  }, [username, fetchUser, subscribeToUser]);
 
   useEffect(() => {
     if (!id) return;
@@ -180,16 +200,21 @@ function RoomChat() {
         replyTo: replyTo ? replyTo.id : null,
       });
 
+      // Use actual username or fallback to "~anon" if not loaded yet
+      const displayUsername = username || "~anon";
+
       const lastMessageText =
         messageType === "thread"
-          ? `~anon started a thread: ${text.slice(0, 20)}${
+          ? `${displayUsername} started a thread: ${text.slice(0, 20)}${
               text.length > 20 ? "..." : ""
             }`
           : replyTo
-          ? `~anon replied: ${text.slice(0, 20)}${
+          ? `${displayUsername} replied: ${text.slice(0, 20)}${
               text.length > 20 ? "..." : ""
             }`
-          : `~anon: ${text.slice(0, 20)}${text.length > 20 ? "..." : ""}`;
+          : `${displayUsername}: ${text.slice(0, 20)}${
+              text.length > 20 ? "..." : ""
+            }`;
 
       await updateDoc(doc(db, "rooms", id), {
         lastMessage: lastMessageText,
@@ -310,6 +335,9 @@ function RoomChat() {
     (msg) => msg.messageType === "thread"
   ).length;
   const memberCount = room.members?.length || 0;
+
+  // Use actual username or fallback for placeholder
+  const displayUsername = username || "~anon";
 
   return (
     <div className="bg-[#111111] h-screen text-white flex flex-col overflow-hidden relative">
@@ -466,7 +494,7 @@ function RoomChat() {
           onSend={sendMessage}
           placeholder={
             replyTo
-              ? `Reply to ~anon${
+              ? `Reply to ${displayUsername}${
                   replyTo.messageType === "thread" ? " (Thread)" : ""
                 }...`
               : "Say Something..."

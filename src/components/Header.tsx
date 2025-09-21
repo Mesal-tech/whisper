@@ -4,13 +4,32 @@ import { signOut } from "firebase/auth";
 import { MdLogout, MdClose } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
+import { useUserStore, useUsername } from "../store/userStore"; // Import userStore
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Header() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+  const username = useUsername(); // Get username from userStore
+  const { clearUser, fetchUser, subscribeToUser } = useUserStore(); // Get userStore actions
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  // Initialize user data when component mounts
+  useEffect(() => {
+    if (user && !username) {
+      // If we have auth user but no username, fetch user data
+      fetchUser(user.uid);
+    }
+
+    if (user) {
+      // Subscribe to real-time user updates
+      const unsubscribe = subscribeToUser(user.uid);
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    }
+  }, [user, username, fetchUser, subscribeToUser]);
 
   useEffect(() => {
     if (!user) {
@@ -48,6 +67,7 @@ export default function Header() {
   const handleConfirmLogout = async () => {
     try {
       await signOut(auth);
+      clearUser(); // Clear user data from store on logout
       navigate("/auth/signin");
     } catch (error) {
       console.error("Error during logout:", error);
@@ -100,7 +120,9 @@ export default function Header() {
                           className="w-12 h-12 rounded-full border-2 border-gray-200"
                         />
                         <div className="flex-1">
-                          <p className="text-lg font-medium text-white">Anon</p>
+                          <p className="text-lg font-medium text-white">
+                            {username || "Loading..."}
+                          </p>
                           <p className="text-[12px] text-gray-300 break-all">
                             {user.email}
                           </p>
