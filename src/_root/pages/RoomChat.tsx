@@ -15,6 +15,8 @@ import {
 import type { Room, Message } from "../../types";
 import InputBox from "../../components/InputBox";
 import MessageBubble from "../../components/MessageBubble";
+import ThreadReplyModal from "../../components/ThreadReplyModal";
+import { IoIosArrowBack } from "react-icons/io";
 
 // Message grouping utility functions
 interface GroupedMessage extends Message {
@@ -32,12 +34,10 @@ function groupMessagesByTime(messages: Message[]): GroupedMessage[] {
     const previousMessage = messages[i - 1];
     const nextMessage = messages[i + 1];
 
-    // Determine if this is the first message in a time group
     const isFirstInTimeGroup =
       !previousMessage ||
       !areMessagesInSameTimeGroup(previousMessage, currentMessage);
 
-    // Determine if this is the last message in a time group
     const isLastInTimeGroup =
       !nextMessage || !areMessagesInSameTimeGroup(currentMessage, nextMessage);
 
@@ -55,16 +55,9 @@ function areMessagesInSameTimeGroup(
   message1: Message,
   message2: Message
 ): boolean {
-  // If either message doesn't have a timestamp, don't group
   if (!message1.timestamp || !message2.timestamp) return false;
-
-  // Messages must be from the same sender
   if (message1.userId !== message2.userId) return false;
-
-  // Don't group thread messages with regular messages
   if (message1.messageType !== message2.messageType) return false;
-
-  // Thread messages don't get grouped together
   if (message1.messageType === "thread" || message2.messageType === "thread") {
     return false;
   }
@@ -72,9 +65,8 @@ function areMessagesInSameTimeGroup(
   const date1 = message1.timestamp.toDate();
   const date2 = message2.timestamp.toDate();
 
-  // Group messages sent within the same minute
   const timeDifference = Math.abs(date2.getTime() - date1.getTime());
-  const oneMinute = 60 * 1000; // 1 minute in milliseconds
+  const oneMinute = 60 * 1000;
 
   return (
     date1.getFullYear() === date2.getFullYear() &&
@@ -93,6 +85,8 @@ function RoomChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [threadModalOpen, setThreadModalOpen] = useState(false);
+  const [selectedThread, setSelectedThread] = useState<Message | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [highlightedMessageId, setHighlightedMessageId] = useState<
@@ -100,7 +94,6 @@ function RoomChat() {
   >(null);
   const messageRefs = useRef<{ [key: string]: HTMLDivElement }>({});
 
-  // Group messages by time whenever messages change
   const groupedMessages = useMemo(() => {
     return groupMessagesByTime(messages);
   }, [messages]);
@@ -108,17 +101,14 @@ function RoomChat() {
   useEffect(() => {
     if (!id) return;
 
-    // Fetch room details
     const roomUnsub = onSnapshot(doc(db, "rooms", id), (docSnap) => {
       if (docSnap.exists()) {
         setRoom({ id: docSnap.id, ...docSnap.data() } as Room);
       } else {
-        // Handle non-existent room
         navigate("/rooms");
       }
     });
 
-    // Fetch messages
     const messagesQuery = query(
       collection(db, `rooms/${id}/messages`),
       orderBy("timestamp", "asc")
@@ -136,7 +126,6 @@ function RoomChat() {
     };
   }, [id, navigate]);
 
-  // Auto-scroll to bottom when new messages arrive or when at bottom
   useEffect(() => {
     if (isAtBottom && messagesContainerRef.current) {
       scrollToBottom();
@@ -154,7 +143,7 @@ function RoomChat() {
     if (messagesContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } =
         messagesContainerRef.current;
-      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
+      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
       setIsAtBottom(isNearBottom);
     }
   };
@@ -172,16 +161,14 @@ function RoomChat() {
 
     setIsSending(true);
     try {
-      // Add message to subcollection
       await addDoc(collection(db, `rooms/${id}/messages`), {
         text,
         userId: user.uid,
         timestamp: serverTimestamp(),
         messageType,
-        replyTo: replyTo ? replyTo.id : null, // Add reply reference if replying
+        replyTo: replyTo ? replyTo.id : null,
       });
 
-      // Update room's lastMessage and timestamp
       const lastMessageText =
         messageType === "thread"
           ? `~anon started a thread: ${text.slice(0, 20)}${
@@ -198,10 +185,7 @@ function RoomChat() {
         timestamp: serverTimestamp(),
       });
 
-      // Clear reply state after sending
       setReplyTo(null);
-
-      // Auto-scroll to bottom after sending
       setTimeout(() => scrollToBottom(), 100);
     } catch (error) {
       console.error("Error sending message:", error);
@@ -212,6 +196,11 @@ function RoomChat() {
 
   const handleReply = (message: Message) => {
     setReplyTo(message);
+  };
+
+  const handleThreadReply = (message: Message) => {
+    setSelectedThread(message);
+    setThreadModalOpen(true);
   };
 
   const handleDeleteMessage = async (messageId: string) => {
@@ -230,16 +219,11 @@ function RoomChat() {
   const scrollToMessage = (messageId: string) => {
     const messageElement = messageRefs.current[messageId];
     if (messageElement && messagesContainerRef.current) {
-      // Scroll to the message
       messageElement.scrollIntoView({
         behavior: "smooth",
         block: "center",
       });
-
-      // Highlight the message
       setHighlightedMessageId(messageId);
-
-      // Remove highlight after 3 seconds
       setTimeout(() => {
         setHighlightedMessageId(null);
       }, 3000);
@@ -264,13 +248,12 @@ function RoomChat() {
 
   return (
     <div className="bg-[#111111] h-screen text-white flex flex-col overflow-hidden">
-      {/* Header */}
       <div className="bg-[#111111] flex items-center p-4 border-b border-gray-800 flex-shrink-0 z-40">
         <button
           onClick={() => navigate("/rooms")}
-          className="text-gray-400 hover:text-white mr-4 transition-colors duration-200"
+          className="text-gray-400 hover:text-white mr-4 transition-colors duration-200 px-2 bg-[#373737] py-2 rounded-full"
         >
-          ← Back
+          <IoIosArrowBack className="text-lg" />
         </button>
         <div className="flex-1">
           <h1 className="text-xl font-semibold">{room.name}</h1>
@@ -288,7 +271,6 @@ function RoomChat() {
         </div>
       </div>
 
-      {/* Messages Container */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
@@ -314,7 +296,14 @@ function RoomChat() {
                   <MessageBubble
                     message={msg}
                     isCurrentUser={msg.userId === auth.currentUser?.uid}
-                    onReply={handleReply}
+                    onReply={
+                      msg.messageType === "message" ? handleReply : undefined
+                    }
+                    onThreadReply={
+                      msg.messageType === "thread"
+                        ? handleThreadReply
+                        : undefined
+                    }
                     onDelete={handleDeleteMessage}
                     showTimestamp={true}
                     isFirstInTimeGroup={msg.isFirstInTimeGroup}
@@ -327,12 +316,9 @@ function RoomChat() {
               ))}
             </div>
           )}
-
-          {/* Spacer for input box */}
           <div className="h-24 flex-shrink-0" />
         </div>
 
-        {/* Scroll to bottom button */}
         {!isAtBottom && messages.length > 0 && (
           <button
             onClick={scrollToBottom}
@@ -343,7 +329,6 @@ function RoomChat() {
         )}
       </div>
 
-      {/* Fixed Input Box */}
       <InputBox
         onSend={sendMessage}
         placeholder={
@@ -357,6 +342,18 @@ function RoomChat() {
         replyTo={replyTo}
         onCancelReply={cancelReply}
       />
+
+      {selectedThread && (
+        <ThreadReplyModal
+          isOpen={threadModalOpen}
+          onClose={() => {
+            setThreadModalOpen(false);
+            setSelectedThread(null);
+          }}
+          thread={selectedThread}
+          roomId={id!}
+        />
+      )}
     </div>
   );
 }

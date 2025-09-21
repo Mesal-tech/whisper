@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import type { PanInfo } from "framer-motion";
 import { HiReply, HiTrash, HiClipboardCopy, HiChatAlt2 } from "react-icons/hi";
+import type { PanInfo } from "framer-motion";
 import type { Message } from "../types";
 
 interface MessageBubbleProps {
@@ -15,6 +15,7 @@ interface MessageBubbleProps {
   allMessages?: Message[];
   onScrollToMessage?: (messageId: string) => void;
   isHighlighted?: boolean;
+  onThreadReply?: (message: Message) => void; // New prop for thread reply
 }
 
 interface BottomSheetProps {
@@ -94,13 +95,14 @@ function MessageBubble({
   allMessages = [],
   onScrollToMessage,
   isHighlighted = false,
+  onThreadReply,
 }: MessageBubbleProps) {
   const [showBottomSheet, setShowBottomSheet] = useState(false);
   const dragX = useMotionValue(0);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isDragging = useRef(false);
 
-  // Transform drag value to opacity for reply icon - all messages swipe left
+  // Transform drag value to opacity for reply icon - only for regular messages
   const replyIconOpacity = useTransform(dragX, [-80, -40, 0], [1, 0.7, 0]);
 
   // Find the message being replied to
@@ -117,15 +119,14 @@ function MessageBubble({
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(message.text);
-      // You might want to show a toast notification here
     } catch (err) {
       console.error("Failed to copy message:", err);
     }
   };
 
   const handleDragStart = () => {
+    if (message.messageType === "thread") return; // No drag for threads
     isDragging.current = true;
-    // Clear any existing long press timer
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
@@ -137,15 +138,13 @@ function MessageBubble({
     event: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo
   ) => {
+    if (message.messageType === "thread") return; // No drag for threads
     const threshold = 80;
     const dragValue = info.offset.x;
 
-    // Only allow swipe left for all messages
     if (dragValue < 0) {
-      // Constrain the drag to not go beyond the threshold
       dragX.set(Math.max(dragValue, -threshold));
     } else {
-      // Don't allow right swipes
       dragX.set(0);
     }
   };
@@ -155,22 +154,20 @@ function MessageBubble({
     event: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo
   ) => {
-    const threshold = 60; // Slightly lower threshold for triggering
+    if (message.messageType === "thread") return; // No drag for threads
+    const threshold = 60;
     const velocity = info.velocity.x;
     const dragValue = info.offset.x;
 
-    // Trigger reply if swiped left far enough or with enough velocity
     const shouldReply = dragValue < -threshold || velocity < -500;
 
     if (shouldReply && onReply) {
       onReply(message);
-      // Add haptic feedback if available
       if (navigator.vibrate) {
         navigator.vibrate(50);
       }
     }
 
-    // Always snap back to original position
     dragX.set(0);
     isDragging.current = false;
   };
@@ -180,11 +177,10 @@ function MessageBubble({
 
     longPressTimer.current = setTimeout(() => {
       setShowBottomSheet(true);
-      // Add haptic feedback if available
       if (navigator.vibrate) {
         navigator.vibrate(100);
       }
-    }, 500); // 500ms for long press
+    }, 500);
   };
 
   const handleLongPressEnd = () => {
@@ -209,13 +205,11 @@ function MessageBubble({
   const isSending = !message.timestamp;
   const isThread = message.messageType === "thread";
 
-  // Adjust spacing based on position in group
   const getMarginTop = () => {
     if (isFirstInTimeGroup) return "mt-4";
     return "mt-1";
   };
 
-  // Adjust border radius based on position in group and message type
   const getBorderRadius = () => {
     if (isThread) {
       return "rounded-lg";
@@ -244,41 +238,20 @@ function MessageBubble({
     }
   };
 
-  // Thread messages have different styling
   if (isThread) {
     return (
       <div className={`flex group relative select-none ${getMarginTop()}`}>
-        <motion.div
-          className="w-full relative"
-          drag="x"
-          dragConstraints={{ left: -100, right: 0 }}
-          dragElastic={0.1}
-          dragMomentum={false}
-          style={{ x: dragX }}
-          onDragStart={handleDragStart}
-          onDrag={handleDrag}
-          onDragEnd={handleDragEnd}
-          onPointerDown={handleLongPressStart}
-          onPointerUp={handleLongPressEnd}
-          onPointerLeave={handleLongPressEnd}
-        >
-          {/* Reply Icon for Thread */}
-          <motion.div
-            style={{ opacity: replyIconOpacity }}
-            className="absolute top-1/2 -translate-y-1/2 -left-12 w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center"
-          >
-            <HiReply className="w-4 h-4 text-white" />
-          </motion.div>
-
-          {/* Thread Container */}
+        <div className="w-full relative">
           <div
             className={`w-full border-l-4 border-purple-500 backdrop-blur-sm p-4 ${getBorderRadius()} transition-all duration-200 ${
               isHighlighted
                 ? "bg-purple-500/30 shadow-lg shadow-purple-500/20"
                 : "bg-purple-500/10 hover:bg-purple-500/15"
             }`}
+            onPointerDown={handleLongPressStart}
+            onPointerUp={handleLongPressEnd}
+            onPointerLeave={handleLongPressEnd}
           >
-            {/* Thread Header */}
             <div className="flex items-center gap-2 mb-3">
               <HiChatAlt2 className="w-4 h-4 text-purple-400" />
               <span className="text-xs font-medium text-purple-300">
@@ -293,7 +266,6 @@ function MessageBubble({
               )}
             </div>
 
-            {/* Reply Preview for Thread */}
             {repliedToMessage && (
               <div
                 className="mb-3 p-2 bg-purple-500/20 border border-purple-500/30 rounded cursor-pointer hover:bg-purple-500/30 transition-colors"
@@ -314,14 +286,12 @@ function MessageBubble({
               </div>
             )}
 
-            {/* Thread Content */}
             <div className="pl-2">
               <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-gray-100">
                 {message.text}
               </p>
             </div>
 
-            {/* Thread Footer */}
             {showTimestamp && message.timestamp && (
               <div className="flex items-center justify-between mt-3 pt-2 border-t border-purple-500/20">
                 <div className="flex items-center gap-2 text-xs text-gray-400">
@@ -329,10 +299,16 @@ function MessageBubble({
                   <span>•</span>
                   <span>Thread</span>
                 </div>
+                <button
+                  onClick={() => onThreadReply?.(message)}
+                  className="text-xs bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full border border-purple-500/30 hover:bg-purple-500/30 transition-colors"
+                >
+                  Reply
+                </button>
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
 
         <BottomSheet
           isOpen={showBottomSheet}
@@ -345,7 +321,6 @@ function MessageBubble({
     );
   }
 
-  // Regular message rendering
   return (
     <div
       className={`flex group relative select-none ${getMarginTop()} ${
@@ -371,7 +346,6 @@ function MessageBubble({
           onPointerLeave={handleLongPressEnd}
           className="relative"
         >
-          {/* Reply Icon */}
           <motion.div
             style={{ opacity: replyIconOpacity }}
             className="absolute top-1/2 -translate-y-1/2 -left-12 w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center"
@@ -379,7 +353,6 @@ function MessageBubble({
             <HiReply className="w-4 h-4 text-white" />
           </motion.div>
 
-          {/* Message Bubble */}
           <div
             className={`p-3 select-none shadow-sm transition-all duration-200 hover:shadow-md ${getBorderRadius()} ${
               isSending
@@ -393,16 +366,13 @@ function MessageBubble({
                 : "bg-gray-800 text-white"
             }`}
           >
-            {/* Message Content */}
             <div className="flex flex-col">
-              {/* Only show username on first message in time group */}
               {isFirstInTimeGroup && (
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <span className="text-xs opacity-70 font-medium">~anon</span>
                 </div>
               )}
 
-              {/* Reply Preview for Regular Messages */}
               {repliedToMessage && (
                 <div
                   className={`mb-2 p-2 rounded border-l-2 cursor-pointer transition-all duration-200 ${
@@ -436,7 +406,6 @@ function MessageBubble({
           </div>
         </motion.div>
 
-        {/* Timestamp/Status below bubble */}
         {isLastInTimeGroup && (
           <div
             className={`mt-1 text-xs text-gray-400 ${

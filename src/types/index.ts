@@ -21,3 +21,11 @@ export interface Message {
   messageType: "message" | "thread";
   replyTo?: string | null;
 }
+
+export interface ThreadReply {
+  id: string;
+  text: string;
+  userId: string;
+  timestamp: Timestamp;
+  threadId: string; // Reference to the parent thread message
+}
