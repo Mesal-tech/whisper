@@ -217,10 +217,31 @@ function InputBox({
     setLoadingPreviews([]);
   };
 
+  function isMobileDevice(): boolean {
+    return (
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      ) ||
+      window.innerWidth <= 768 || // Fallback for smaller screens
+      "ontouchstart" in window
+    ); // Touch support detection
+  }
+
+  // Replace the existing handleKeyPress function with this:
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+    const isMobile = isMobileDevice();
+
+    if (e.key === "Enter") {
+      if (isMobile) {
+        // On mobile: Enter creates line break, don't send
+        return;
+      } else {
+        // On desktop: Enter sends (unless Shift is held)
+        if (!e.shiftKey) {
+          e.preventDefault();
+          handleSend();
+        }
+      }
     }
   };
 
