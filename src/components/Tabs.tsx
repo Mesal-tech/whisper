@@ -50,26 +50,28 @@ export default function ResponsiveNavigation() {
         </div>
       </aside>
 
-      {/* Mobile Bottom Tabs */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#111111] shadow-md flex justify-around items-center h-16 rounded-tl-2xl rounded-tr-2xl z-50">
-        {tabs.map((tab) => (
-          <NavLink
-            key={tab.path}
-            to={tab.path}
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center text-sm transition-colors ${
-                isActive ? "text-white" : "text-gray-500"
-              }`
-            }
-          >
-            <tab.icon className="h-7 w-7" />
-            <span className="text-xs mt-1">{tab.name}</span>
-          </NavLink>
-        ))}
+      {/* Mobile Bottom Tabs - Pill Shape */}
+      <nav className="md:hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-[#121212] border-2 border-white rounded-full shadow-lg flex justify-center items-center h-16 px-6 z-50">
+        <div className="flex items-center space-x-8">
+          {tabs.map((tab) => (
+            <NavLink
+              key={tab.path}
+              to={tab.path}
+              className={({ isActive }) =>
+                `flex flex-col items-center justify-center text-sm transition-colors ${
+                  isActive ? "text-white" : "text-gray-500"
+                }`
+              }
+            >
+              <tab.icon className="h-8 w-8" />
+              {/* <span className="text-xs mt-1">{tab.name}</span> */}
+            </NavLink>
+          ))}
+        </div>
       </nav>
 
       {/* Main content wrapper - add padding for sidebar on desktop */}
-      <div className="md:ml-20 lg:ml-64 pb-16 md:pb-0">
+      <div className="md:ml-20 lg:ml-64 pb-24 md:pb-0">
         {/* Your main content goes here */}
       </div>
     </>
