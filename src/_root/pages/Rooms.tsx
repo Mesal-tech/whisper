@@ -190,7 +190,7 @@ function Rooms() {
             onClick={closeModal}
           >
             <motion.div
-              className="bg-gray-800 w-full max-w-md rounded-t-lg p-6"
+              className="bg-[#121212] w-full max-w-md rounded-t-4xl p-6"
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}

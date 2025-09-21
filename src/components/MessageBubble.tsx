@@ -1,5 +1,10 @@
 import { useState, useRef } from "react";
-import { motion, useMotionValue, useTransform } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  useTransform,
+  AnimatePresence,
+} from "framer-motion";
 import { HiReply, HiTrash, HiClipboardCopy, HiChatAlt2 } from "react-icons/hi";
 import type { PanInfo } from "framer-motion";
 import type { Message } from "../types";
@@ -73,53 +78,88 @@ function BottomSheet({
   showDelete,
 }: BottomSheetProps) {
   return (
-    <>
+    <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50" onClick={onClose} />
-      )}
-      <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: isOpen ? 0 : "100%" }}
-        exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        className="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-gray-700 rounded-t-4xl p-6 z-60"
-      >
-        <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mb-4" />
-
-        <div className="space-y-3">
-          <button
-            onClick={() => {
-              onCopy();
-              onClose();
-            }}
-            className="flex items-center gap-3 w-full p-3 text-left text-white hover:bg-gray-800 rounded-lg transition-colors"
-          >
-            <HiClipboardCopy className="w-5 h-5 text-gray-400" />
-            <span>Copy message</span>
-          </button>
-
-          {showDelete && onDelete && (
-            <button
-              onClick={() => {
-                onDelete();
-                onClose();
-              }}
-              className="flex items-center gap-3 w-full p-3 text-left text-red-400 hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <HiTrash className="w-5 h-5" />
-              <span>Delete message</span>
-            </button>
-          )}
-        </div>
-
-        <button
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="fixed inset-0 bg-black/50 z-[60]"
           onClick={onClose}
-          className="w-full mt-4 p-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
         >
-          Cancel
-        </button>
-      </motion.div>
-    </>
+          <motion.div
+            initial={{ y: "100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
+            transition={{
+              type: "spring",
+              damping: 25,
+              stiffness: 200,
+              duration: 0.4,
+            }}
+            className="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-gray-700 rounded-t-4xl p-6 z-60"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.3 }}
+            >
+              <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mb-4" />
+
+              <div className="space-y-3">
+                <motion.button
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.15, duration: 0.3 }}
+                  onClick={() => {
+                    onCopy();
+                    onClose();
+                  }}
+                  className="flex items-center gap-3 w-full p-3 text-left text-white hover:bg-gray-800 rounded-lg transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <HiClipboardCopy className="w-5 h-5 text-gray-400" />
+                  <span>Copy message</span>
+                </motion.button>
+
+                {showDelete && onDelete && (
+                  <motion.button
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2, duration: 0.3 }}
+                    onClick={() => {
+                      onDelete();
+                      onClose();
+                    }}
+                    className="flex items-center gap-3 w-full p-3 text-left text-red-400 hover:bg-gray-800 rounded-lg transition-colors"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <HiTrash className="w-5 h-5" />
+                    <span>Delete message</span>
+                  </motion.button>
+                )}
+              </div>
+
+              <motion.button
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.25, duration: 0.3 }}
+                onClick={onClose}
+                className="w-full mt-4 p-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Cancel
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 

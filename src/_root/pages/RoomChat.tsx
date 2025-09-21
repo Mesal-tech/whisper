@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { auth, db } from "../../lib/firebase";
 import {
   collection,
@@ -17,6 +18,7 @@ import InputBox from "../../components/InputBox";
 import MessageBubble from "../../components/MessageBubble";
 import ThreadReplyModal from "../../components/ThreadReplyModal";
 import { IoIosArrowBack } from "react-icons/io";
+import { FaEllipsisV } from "react-icons/fa";
 import { FaChevronDown } from "react-icons/fa";
 
 // Message grouping utility functions
@@ -88,6 +90,7 @@ function RoomChat() {
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [threadModalOpen, setThreadModalOpen] = useState(false);
   const [selectedThread, setSelectedThread] = useState<Message | null>(null);
+  const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [highlightedMessageId, setHighlightedMessageId] = useState<
@@ -231,6 +234,25 @@ function RoomChat() {
     }
   };
 
+  const handleDeleteGroup = async () => {
+    if (!id || !room || !auth.currentUser) return;
+    if (room.creatorId !== auth.currentUser.uid) return;
+
+    try {
+      await deleteDoc(doc(db, "rooms", id));
+      navigate("/rooms");
+    } catch (error) {
+      console.error("Error deleting group:", error);
+    }
+  };
+
+  const handleShareGroupLink = () => {
+    alert(
+      "Share Group Link functionality is simulated. Link: https://example.com/room/" +
+        id
+    );
+  };
+
   if (!room) {
     return (
       <div className="bg-black min-h-screen text-white flex items-center justify-center">
@@ -268,6 +290,12 @@ function RoomChat() {
             )}
           </p>
         </div>
+        <button
+          onClick={() => setBottomSheetOpen(true)}
+          className="text-gray-400 hover:text-white transition-colors p-2"
+        >
+          <FaEllipsisV className="text-xl" />
+        </button>
       </div>
 
       {/* MESSAGES CONTAINER - Adjusted for fixed header */}
@@ -360,6 +388,82 @@ function RoomChat() {
           roomId={id!}
         />
       )}
+
+      {/* ANIMATED BOTTOM SHEET */}
+      <AnimatePresence>
+        {bottomSheetOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end"
+            onClick={() => setBottomSheetOpen(false)}
+          >
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{
+                type: "spring",
+                damping: 25,
+                stiffness: 200,
+                duration: 0.4,
+              }}
+              className="bg-[#121212] w-full rounded-t-4xl border-t-2 border-gray-800 p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, duration: 0.3 }}
+              >
+                <h2 className="text-2xl font-semibold mb-4 text-center border-b border-gray-700 pb-2">
+                  Group Options
+                </h2>
+
+                <motion.button
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.15, duration: 0.3 }}
+                  onClick={handleShareGroupLink}
+                  className="w-full text-left text-white py-3 px-3 hover:bg-[#151515] rounded-xl transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Share Group Link
+                </motion.button>
+
+                {room.creatorId === auth.currentUser?.uid && (
+                  <motion.button
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2, duration: 0.3 }}
+                    onClick={handleDeleteGroup}
+                    className="w-full text-left text-red-400 py-3 px-3 hover:bg-[#151515] rounded-xl transition-colors mt-2"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Delete Group
+                  </motion.button>
+                )}
+
+                <motion.button
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.25, duration: 0.3 }}
+                  onClick={() => setBottomSheetOpen(false)}
+                  className="w-full text-gray-300 py-3 hover:bg-[#151515] rounded transition-colors mt-4"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Cancel
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* CUSTOM SCROLLBAR STYLES */}
       <style>{`
