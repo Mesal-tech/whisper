@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 //@ts-ignore
-import "@fontsource/caveat-brush";
+import "@fontsource/caveat-brush/400.css";
 
 // import "@fontsource/jost"; // Defaults to weight 400
 // import "@fontsource/jost/400.css"; // Specify weight
