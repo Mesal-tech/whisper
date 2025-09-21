@@ -1,17 +1,29 @@
+// src/_root/RootLayout.tsx
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import Tabs from "../components/Tabs";
 import { useAuthStore } from "../store/authStore";
 
-const ProtectedRoute = () => {
-  const { user } = useAuthStore();
+export default function RootLayout() {
   const location = useLocation();
+
+  const routesWithoutTabs = ["/rooms/"];
+  const hideTabs = routesWithoutTabs.some((route) =>
+    location.pathname.startsWith(route)
+  );
+  const { user } = useAuthStore();
 
   // If user is not authenticated, redirect to signin page
   if (!user) {
     return <Navigate to="/auth/signin" state={{ from: location }} replace />;
   }
 
-  // If authenticated, render the child routes
-  return <Outlet />;
-};
+  return (
+    <div className="h-screen overflow-hidden">
+      {/* Main content area (fills available space between header + tabs) */}
+      <Outlet />
 
-export default ProtectedRoute;
+      {/* Bottom tabs, hidden for specified routes */}
+      {!hideTabs && <Tabs />}
+    </div>
+  );
+}
