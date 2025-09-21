@@ -12,7 +12,7 @@ import RoomChat from "./_root/pages/RoomChat";
 
 function App() {
   return (
-    <div className="fixed inset-0 overflow-hidden">
+    <div className="min-h-screen bg-[#111111]">
       <Router>
         <Routes>
           {/* Auth routes */}
