@@ -333,7 +333,7 @@ function InputBox({
                 <div className="flex items-center gap-2 mb-2">
                   <HiReply className="w-4 h-4 text-blue-400" />
                   <span className="text-xs font-medium text-blue-400">
-                    Replying to ~anon
+                    Replying to {replyTo.userName || "Anonymous"}
                   </span>
                   {replyTo.messageType === "thread" && (
                     <span className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/30">

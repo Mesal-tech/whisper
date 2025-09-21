@@ -12,6 +12,7 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  getDoc,
 } from "firebase/firestore";
 import type { Room, Message } from "../../types";
 import InputBox from "../../components/InputBox";
@@ -89,6 +90,7 @@ function RoomChat() {
   const { fetchUser, subscribeToUser } = useUserStore(); // Get userStore actions
   const [room, setRoom] = useState<Room | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [isSending, setIsSending] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [threadModalOpen, setThreadModalOpen] = useState(false);
@@ -145,9 +147,14 @@ function RoomChat() {
       orderBy("timestamp", "asc")
     );
     const messagesUnsub = onSnapshot(messagesQuery, (snap) => {
-      const newMessages = snap.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as Message)
-      );
+      const newMessages = snap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          userName: userNames[data.userId] || "Anonymous",
+        } as Message;
+      });
       setMessages(newMessages);
     });
 
@@ -155,7 +162,25 @@ function RoomChat() {
       roomUnsub();
       messagesUnsub();
     };
-  }, [id, navigate]);
+  }, [id, navigate, userNames]);
+
+  useEffect(() => {
+    if (!room) return;
+
+    const fetchUserNames = async () => {
+      const names: Record<string, string> = {};
+      for (const userId of room.members || []) {
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if (userDoc.exists()) {
+          const userData = userDoc.data() as { userName: string };
+          names[userId] = userData.userName;
+        }
+      }
+      setUserNames(names);
+    };
+
+    fetchUserNames();
+  }, [room]);
 
   useEffect(() => {
     if (isAtBottom && messagesContainerRef.current) {
@@ -200,8 +225,8 @@ function RoomChat() {
         replyTo: replyTo ? replyTo.id : null,
       });
 
-      // Use actual username or fallback to "~anon" if not loaded yet
-      const displayUsername = username || "~anon";
+      // Use actual username or fallback to "Anonymous" if not loaded yet
+      const displayUsername = username || "Anonymous";
 
       const lastMessageText =
         messageType === "thread"
@@ -335,9 +360,6 @@ function RoomChat() {
     (msg) => msg.messageType === "thread"
   ).length;
   const memberCount = room.members?.length || 0;
-
-  // Use actual username or fallback for placeholder
-  const displayUsername = username || "~anon";
 
   return (
     <div className="bg-[#111111] h-screen text-white flex flex-col overflow-hidden relative">
@@ -494,7 +516,7 @@ function RoomChat() {
           onSend={sendMessage}
           placeholder={
             replyTo
-              ? `Reply to ${displayUsername}${
+              ? `Reply to ${replyTo.userName || "Anonymous"}${
                   replyTo.messageType === "thread" ? " (Thread)" : ""
                 }...`
               : "Say Something..."

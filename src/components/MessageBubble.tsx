@@ -336,7 +336,9 @@ function MessageBubble({
               <span className="text-xs font-medium text-purple-300">
                 Thread
               </span>
-              <span className="text-xs text-gray-400">by ~anon</span>
+              <span className="text-xs text-gray-400">
+                by {message.userName || "Anonymous"}
+              </span>
               {isSending && (
                 <div className="flex items-center gap-1 ml-auto">
                   <span className="text-xs text-gray-400">Sending</span>
@@ -353,7 +355,7 @@ function MessageBubble({
                 <div className="flex items-center gap-2 mb-1">
                   <HiReply className="w-3 h-3 text-purple-400" />
                   <span className="text-xs text-purple-300">
-                    Replying to ~anon
+                    Replying to {repliedToMessage.userName || "Anonymous"}
                     {repliedToMessage.messageType === "thread" && " (Thread)"}
                   </span>
                 </div>
@@ -449,7 +451,9 @@ function MessageBubble({
             <div className="flex flex-col">
               {isFirstInTimeGroup && !isCurrentUser && (
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <span className="text-xs opacity-70 font-medium">~anon</span>
+                  <span className="text-xs opacity-70 font-medium">
+                    {message.userName || "Anonymous"}
+                  </span>
                 </div>
               )}
 
@@ -465,7 +469,7 @@ function MessageBubble({
                   <div className="flex items-center gap-2 mb-1">
                     <HiReply className="w-3 h-3 opacity-60" />
                     <span className="text-xs opacity-70">
-                      Replying to ~anon
+                      Replying to {repliedToMessage.userName || "Anonymous"}
                       {repliedToMessage.messageType === "thread" && (
                         <span className="text-purple-300 ml-1">(Thread)</span>
                       )}

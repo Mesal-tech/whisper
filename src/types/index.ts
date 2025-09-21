@@ -26,6 +26,7 @@ export interface Message {
   id: string;
   text: string;
   userId: string;
+  userName?: string; // Optional username field for display
   timestamp: Timestamp;
   messageType: "message" | "thread";
   replyTo?: string | null;
