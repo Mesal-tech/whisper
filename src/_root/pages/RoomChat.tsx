@@ -91,6 +91,8 @@ function RoomChat() {
   const [threadModalOpen, setThreadModalOpen] = useState(false);
   const [selectedThread, setSelectedThread] = useState<Message | null>(null);
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showJoinScreen, setShowJoinScreen] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [highlightedMessageId, setHighlightedMessageId] = useState<
@@ -107,7 +109,12 @@ function RoomChat() {
 
     const roomUnsub = onSnapshot(doc(db, "rooms", id), (docSnap) => {
       if (docSnap.exists()) {
-        setRoom({ id: docSnap.id, ...docSnap.data() } as Room);
+        const roomData = { id: docSnap.id, ...docSnap.data() } as Room;
+        setRoom(roomData);
+        const userId = auth.currentUser?.uid;
+        if (userId && roomData.members && !roomData.members.includes(userId)) {
+          setShowJoinScreen(true);
+        }
       } else {
         navigate("/rooms");
       }
@@ -240,22 +247,60 @@ function RoomChat() {
 
     try {
       await deleteDoc(doc(db, "rooms", id));
-      navigate("/rooms");
+      navigate("/rooms", { replace: true });
     } catch (error) {
       console.error("Error deleting group:", error);
+    } finally {
+      setShowDeleteConfirm(false);
     }
   };
 
+  const handleDeleteGroupClick = () => {
+    setBottomSheetOpen(false);
+    setShowDeleteConfirm(true);
+  };
+
   const handleShareGroupLink = () => {
-    alert(
-      "Share Group Link functionality is simulated. Link: https://example.com/room/" +
-        id
-    );
+    const currentUrl = window.location.href;
+
+    if (navigator.clipboard) {
+      navigator.clipboard
+        .writeText(currentUrl)
+        .then(() => {
+          alert(`Group link copied to clipboard!\n\n${currentUrl}`);
+        })
+        .catch(() => {
+          alert(`Group link:\n\n${currentUrl}`);
+        });
+    } else {
+      alert(`Group link:\n\n${currentUrl}`);
+    }
+  };
+
+  const handleJoinGroup = async () => {
+    if (!id || !room || !auth.currentUser) return;
+    const userId = auth.currentUser.uid;
+
+    try {
+      const newMembers = [...(room.members || []), userId];
+      await updateDoc(doc(db, "rooms", id), {
+        members: newMembers,
+        timestamp: serverTimestamp(),
+      });
+      setShowJoinScreen(false); // Hide join screen
+      // No immediate navigation here; let useEffect handle the route
+    } catch (error) {
+      console.error("Error joining group:", error);
+    }
+  };
+
+  const handleCancelJoin = () => {
+    navigate("/", { replace: true });
   };
 
   if (!room) {
     return (
-      <div className="bg-black min-h-screen text-white flex items-center justify-center">
+      <div className="bg-[#111111] min-h-screen text-white flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
       </div>
     );
@@ -268,116 +313,172 @@ function RoomChat() {
 
   return (
     <div className="bg-[#111111] h-screen text-white flex flex-col overflow-hidden relative">
+      {/* JOIN GROUP SCREEN */}
+      {showJoinScreen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed inset-0 bg-[#111111] z-50 flex flex-col items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="bg-[#1c1c1c] rounded-2xl border border-gray-700 p-6 w-full max-w-md text-center"
+          >
+            <div
+              className="w-20 h-20 mx-auto mb-4 rounded-full bg-cover bg-center flex items-center justify-center text-white font-semibold text-2xl"
+              style={{
+                backgroundImage: room.avatar.startsWith("http")
+                  ? `url(${room.avatar})`
+                  : "none",
+              }}
+            >
+              {!room.avatar.startsWith("http") && room.avatar}
+            </div>
+            <h2 className="text-2xl font-semibold mb-2">{room.name}</h2>
+            <p className="text-gray-400 mb-6">{room.bio}</p>
+            <div className="flex gap-3">
+              <motion.button
+                onClick={handleCancelJoin}
+                className="flex-1 py-3 px-4 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Cancel
+              </motion.button>
+              <motion.button
+                onClick={handleJoinGroup}
+                className="flex-1 py-3 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Join
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
       {/* LOCKED HEADER - Fixed Position */}
-      <div className="fixed top-0 left-0 right-0 flex items-center p-4 border-b border-gray-800 z-50 backdrop-blur-md bg-[#111111]/95">
-        <button
-          onClick={() => navigate("/rooms")}
-          className="text-gray-400 hover:text-white mr-4 transition-colors duration-200 px-2 bg-[#373737] py-2 rounded-full"
-        >
-          <IoIosArrowBack className="text-lg" />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-xl font-semibold">{room.name}</h1>
-          <p className="text-sm text-gray-400">
-            {memberCount} {memberCount === 1 ? "member" : "members"}
-            {threadCount > 0 && (
-              <>
-                {" • "}
-                <span className="text-purple-400">
-                  {threadCount} {threadCount === 1 ? "thread" : "threads"}
-                </span>
-              </>
-            )}
-          </p>
+      {!showJoinScreen && (
+        <div className="fixed top-0 left-0 right-0 flex items-center p-4 border-b border-gray-800 z-50 backdrop-blur-md bg-[#111111]/95">
+          <button
+            onClick={() => navigate("/rooms")}
+            className="text-gray-400 hover:text-white mr-4 transition-colors duration-200 px-2 bg-[#373737] py-2 rounded-full"
+          >
+            <IoIosArrowBack className="text-lg" />
+          </button>
+          <div className="flex-1">
+            <h1 className="text-xl font-semibold">{room.name}</h1>
+            <p className="text-sm text-gray-400">
+              {memberCount} {memberCount === 1 ? "member" : "members"}
+              {threadCount > 0 && (
+                <>
+                  {" • "}
+                  <span className="text-purple-400">
+                    {threadCount} {threadCount === 1 ? "thread" : "threads"}
+                  </span>
+                </>
+              )}
+            </p>
+          </div>
+          <button
+            onClick={() => setBottomSheetOpen(true)}
+            className="text-gray-400 hover:text-white transition-colors p-2"
+          >
+            <FaEllipsisV className="text-xl" />
+          </button>
         </div>
-        <button
-          onClick={() => setBottomSheetOpen(true)}
-          className="text-gray-400 hover:text-white transition-colors p-2"
-        >
-          <FaEllipsisV className="text-xl" />
-        </button>
-      </div>
+      )}
 
       {/* MESSAGES CONTAINER - Adjusted for fixed header */}
-      <div
-        ref={messagesContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto overflow-x-hidden messages-container pt-20"
-        style={{
-          paddingTop: "5rem", // Space for fixed header (80px)
-          paddingBottom: "6rem", // Space for fixed input box (96px)
-        }}
-      >
-        <div className="p-4 min-h-full">
-          {messages.length === 0 ? (
-            <div className="text-center text-gray-400 py-8">
-              <p>No messages yet. Start the conversation!</p>
-              <p className="text-xs mt-2 text-gray-500">
-                Tip: Use "/thread your message" to create a thread
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-0">
-              {groupedMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  ref={(el) => {
-                    if (el) messageRefs.current[msg.id] = el;
-                  }}
-                >
-                  <MessageBubble
-                    message={msg}
-                    isCurrentUser={msg.userId === auth.currentUser?.uid}
-                    onReply={
-                      msg.messageType === "message" ? handleReply : undefined
-                    }
-                    onThreadReply={
-                      msg.messageType === "thread"
-                        ? handleThreadReply
-                        : undefined
-                    }
-                    onDelete={handleDeleteMessage}
-                    showTimestamp={true}
-                    isFirstInTimeGroup={msg.isFirstInTimeGroup}
-                    isLastInTimeGroup={msg.isLastInTimeGroup}
-                    allMessages={messages}
-                    onScrollToMessage={scrollToMessage}
-                    isHighlighted={highlightedMessageId === msg.id}
-                  />
-                </div>
-              ))}
-            </div>
+      {!showJoinScreen && (
+        <div
+          ref={messagesContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto overflow-x-hidden messages-container pt-20"
+          style={{
+            paddingTop: "5rem", // Space for fixed header (80px)
+            paddingBottom: "6rem", // Space for fixed input box (96px)
+          }}
+        >
+          <div className="p-4 min-h-full">
+            {messages.length === 0 ? (
+              <div className="text-center text-gray-400 py-8">
+                <p>No messages yet. Start the conversation!</p>
+                <p className="text-xs mt-2 text-gray-500">
+                  Tip: Use "/thread your message" to create a thread
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-0">
+                {groupedMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    ref={(el) => {
+                      if (el) messageRefs.current[msg.id] = el;
+                    }}
+                  >
+                    <MessageBubble
+                      message={msg}
+                      isCurrentUser={msg.userId === auth.currentUser?.uid}
+                      onReply={
+                        msg.messageType === "message" ? handleReply : undefined
+                      }
+                      onThreadReply={
+                        msg.messageType === "thread"
+                          ? handleThreadReply
+                          : undefined
+                      }
+                      onDelete={handleDeleteMessage}
+                      showTimestamp={true}
+                      isFirstInTimeGroup={msg.isFirstInTimeGroup}
+                      isLastInTimeGroup={msg.isLastInTimeGroup}
+                      allMessages={messages}
+                      onScrollToMessage={scrollToMessage}
+                      isHighlighted={highlightedMessageId === msg.id}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* SCROLL TO BOTTOM BUTTON - Adjusted position */}
+          {!isAtBottom && messages.length > 0 && (
+            <button
+              onClick={scrollToBottom}
+              className="fixed bottom-32 right-6 bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-full shadow-lg border border-gray-600 transition-all duration-200 z-40"
+            >
+              <FaChevronDown className="text-lg" />
+            </button>
           )}
         </div>
-
-        {/* SCROLL TO BOTTOM BUTTON - Adjusted position */}
-        {!isAtBottom && messages.length > 0 && (
-          <button
-            onClick={scrollToBottom}
-            className="fixed bottom-32 right-6 bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-full shadow-lg border border-gray-600 transition-all duration-200 z-40"
-          >
-            <FaChevronDown className="text-lg" />
-          </button>
-        )}
-      </div>
+      )}
 
       {/* INPUT BOX - Already fixed at bottom */}
-      <InputBox
-        onSend={sendMessage}
-        placeholder={
-          replyTo
-            ? `Reply to ~anon${
-                replyTo.messageType === "thread" ? " (Thread)" : ""
-              }...`
-            : "Say Something..."
-        }
-        disabled={isSending}
-        replyTo={replyTo}
-        onCancelReply={cancelReply}
-      />
+      {!showJoinScreen && (
+        <InputBox
+          onSend={sendMessage}
+          placeholder={
+            replyTo
+              ? `Reply to ~anon${
+                  replyTo.messageType === "thread" ? " (Thread)" : ""
+                }...`
+              : "Say Something..."
+          }
+          disabled={isSending}
+          replyTo={replyTo}
+          onCancelReply={cancelReply}
+        />
+      )}
 
       {/* THREAD MODAL */}
-      {selectedThread && (
+      {!showJoinScreen && selectedThread && (
         <ThreadReplyModal
           isOpen={threadModalOpen}
           onClose={() => {
@@ -390,80 +491,153 @@ function RoomChat() {
       )}
 
       {/* ANIMATED BOTTOM SHEET */}
-      <AnimatePresence>
-        {bottomSheetOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end"
-            onClick={() => setBottomSheetOpen(false)}
-          >
+      {!showJoinScreen && (
+        <AnimatePresence>
+          {bottomSheetOpen && (
             <motion.div
-              initial={{ y: "100%", opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: "100%", opacity: 0 }}
-              transition={{
-                type: "spring",
-                damping: 25,
-                stiffness: 200,
-                duration: 0.4,
-              }}
-              className="bg-[#121212] w-full rounded-t-4xl border-t-2 border-gray-800 p-6"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end"
+              onClick={() => setBottomSheetOpen(false)}
             >
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.3 }}
+                initial={{ y: "100%", opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: "100%", opacity: 0 }}
+                transition={{
+                  type: "spring",
+                  damping: 25,
+                  stiffness: 200,
+                  duration: 0.4,
+                }}
+                className="bg-[#121212] w-full rounded-t-4xl border-t-2 border-gray-800 p-6"
+                onClick={(e) => e.stopPropagation()}
               >
-                <h2 className="text-2xl font-semibold mb-4 text-center border-b border-gray-700 pb-2">
-                  Group Options
-                </h2>
-
-                <motion.button
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15, duration: 0.3 }}
-                  onClick={handleShareGroupLink}
-                  className="w-full text-left text-white py-3 px-3 hover:bg-[#151515] rounded-xl transition-colors"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1, duration: 0.3 }}
                 >
-                  Share Group Link
-                </motion.button>
+                  <h2 className="text-2xl font-semibold mb-4 text-center border-b border-gray-700 pb-2">
+                    {room.name}
+                  </h2>
 
-                {room.creatorId === auth.currentUser?.uid && (
                   <motion.button
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2, duration: 0.3 }}
-                    onClick={handleDeleteGroup}
-                    className="w-full text-left text-red-400 py-3 px-3 hover:bg-[#151515] rounded-xl transition-colors mt-2"
+                    transition={{ delay: 0.15, duration: 0.3 }}
+                    onClick={handleShareGroupLink}
+                    className="w-full text-left text-white py-3 px-3 hover:bg-[#151515] rounded-xl transition-colors"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    Delete Group
+                    Share Group Link
                   </motion.button>
-                )}
 
-                <motion.button
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.25, duration: 0.3 }}
-                  onClick={() => setBottomSheetOpen(false)}
-                  className="w-full text-gray-300 py-3 hover:bg-[#151515] rounded transition-colors mt-4"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Cancel
-                </motion.button>
+                  {room.creatorId === auth.currentUser?.uid && (
+                    <motion.button
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2, duration: 0.3 }}
+                      onClick={handleDeleteGroupClick}
+                      className="w-full text-left text-red-400 py-3 px-3 hover:bg-[#151515] rounded-xl transition-colors mt-2"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      Delete Group
+                    </motion.button>
+                  )}
+
+                  <motion.button
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25, duration: 0.3 }}
+                    onClick={() => setBottomSheetOpen(false)}
+                    className="w-full text-gray-300 py-3 hover:bg-[#151515] rounded transition-colors mt-4"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Cancel
+                  </motion.button>
+                </motion.div>
               </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {!showJoinScreen && (
+        <AnimatePresence>
+          {showDeleteConfirm && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                transition={{
+                  type: "spring",
+                  damping: 25,
+                  stiffness: 200,
+                  duration: 0.4,
+                }}
+                className="bg-[#1c1c1c] rounded-2xl border border-gray-700 p-6 max-w-sm w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1, duration: 0.3 }}
+                  className="text-center"
+                >
+                  <h3 className="text-xl font-semibold text-white mb-2">
+                    Delete Group
+                  </h3>
+                  <p className="text-gray-400 mb-6">
+                    Are you sure you want to delete "{room.name}"? This action
+                    cannot be undone.
+                  </p>
+
+                  <div className="flex gap-3">
+                    <motion.button
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.15, duration: 0.3 }}
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="flex-1 py-3 px-4 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      Cancel
+                    </motion.button>
+
+                    <motion.button
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2, duration: 0.3 }}
+                      onClick={handleDeleteGroup}
+                      className="flex-1 py-3 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      Delete
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
 
       {/* CUSTOM SCROLLBAR STYLES */}
       <style>{`
