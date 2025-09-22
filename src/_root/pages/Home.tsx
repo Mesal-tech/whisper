@@ -22,22 +22,16 @@ function Home() {
   const profileUrl = `${window.location.origin}/anon/${userId || ""}`;
 
   const handleCopyUrl = () => {
-    navigator.clipboard
-      .writeText(profileUrl)
-      .then(() => {
-        alert("URL copied to clipboard!");
-      })
-      .catch((err) => {
-        console.error("Failed to copy URL: ", err);
-        // Fallback for older browsers
-        const textArea = document.createElement("textarea");
-        textArea.value = profileUrl;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
-        alert("URL copied to clipboard!");
-      });
+    navigator.clipboard.writeText(profileUrl).catch((err) => {
+      console.error("Failed to copy URL: ", err);
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = profileUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+    });
   };
 
   const handleShare = async () => {
