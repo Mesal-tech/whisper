@@ -9,6 +9,13 @@ export interface User {
   bio?: string;
 }
 
+export interface AnonymousMessage {
+  id: string;
+  text: string;
+  timestamp: Timestamp;
+  anonymous: boolean;
+}
+
 export interface Room {
   id: string;
   name: string;

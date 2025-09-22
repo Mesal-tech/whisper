@@ -323,10 +323,10 @@ function InputBox({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-[#111111] z-50">
-      <div className="max-w-screen-xl mx-auto p-4">
+      <div className="max-w-screen-xl mx-auto p-2">
         {/* Enhanced Reply Preview */}
         {replyTo && (
-          <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border border-gray-700 mb-3 rounded-lg shadow-lg">
+          <div className="bg-[#121212] rounded-lg shadow-lg">
             <div className="flex items-start justify-between p-3">
               <div className="flex-1">
                 {/* Reply Header */}
@@ -343,8 +343,11 @@ function InputBox({
                 </div>
 
                 {/* Message Preview */}
-                <div className="bg-gray-800/50 border border-gray-700 rounded p-2">
-                  <p className="text-sm text-gray-200 line-clamp-2">
+                <div className="bg-gray-800/30 border border-gray-900 rounded p-2">
+                  <p
+                    className="text-sm text-gray-200 line-clamp-2 break-all"
+                    style={{ overflowWrap: "break-word" }}
+                  >
                     {replyTo.text.length > 100
                       ? `${replyTo.text.substring(0, 100)}...`
                       : replyTo.text}

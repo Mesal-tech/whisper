@@ -1,6 +1,3 @@
-// src/App.tsx
-// Update the existing App.tsx with the new route
-
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import AuthLayout from "./_auth/AuthLayout";
 import Signin from "./_auth/Signin";
@@ -9,6 +6,7 @@ import Home from "./_root/pages/Home";
 import Rooms from "./_root/pages/Rooms";
 import Messages from "./_root/pages/Messages";
 import RoomChat from "./_root/pages/RoomChat";
+import AnonMessage from "./_root/pages/AnonMessage";
 
 function App() {
   return (
@@ -27,6 +25,9 @@ function App() {
             <Route path="/rooms/:id" element={<RoomChat />} />
             <Route path="/messages" element={<Messages />} />
           </Route>
+
+          {/* Anonymous message route (accessible without auth) */}
+          <Route path="/anon/:id" element={<AnonMessage />} />
         </Routes>
       </Router>
     </div>
