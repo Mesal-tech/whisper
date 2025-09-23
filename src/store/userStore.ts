@@ -1,26 +1,40 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  onSnapshot,
+  collection,
+  query,
+  orderBy,
+  getDocs,
+} from "firebase/firestore";
 import { db } from "../lib/firebase";
 import type { User } from "../types";
+import type { AnonymousMessage } from "../types"; // Adjust path to your types file
 
 interface UserState {
   user: User | null;
+  messages: AnonymousMessage[] | null;
   loading: boolean;
   error: string | null;
 
   // Actions
   fetchUser: (userId: string) => Promise<void>;
+  fetchMessages: (userId: string) => Promise<void>;
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   setUser: (user: User | null) => void;
   clearUser: () => void;
   subscribeToUser: (userId: string) => (() => void) | null;
+  subscribeToMessages: (userId: string) => (() => void) | null;
 }
 
 export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
       user: null,
+      messages: null,
       loading: false,
       error: null,
 
@@ -48,6 +62,36 @@ export const useUserStore = create<UserState>()(
             loading: false,
             error:
               error instanceof Error ? error.message : "Failed to fetch user",
+          });
+        }
+      },
+
+      // Fetch messages from Firestore (initial fetch without subscription)
+      fetchMessages: async (userId: string) => {
+        set({ loading: true, error: null });
+
+        try {
+          const q = query(
+            collection(db, `users/${userId}/messages`),
+            orderBy("timestamp", "desc")
+          );
+          const snapshot = await getDocs(q);
+          const messageData = snapshot.docs.map(
+            (doc) =>
+              ({
+                id: doc.id,
+                ...doc.data(),
+              } as AnonymousMessage)
+          );
+          set({ messages: messageData, loading: false });
+        } catch (error) {
+          console.error("Error fetching messages:", error);
+          set({
+            loading: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to fetch messages",
           });
         }
       },
@@ -85,7 +129,7 @@ export const useUserStore = create<UserState>()(
 
       // Clear user data (useful for logout)
       clearUser: () => {
-        set({ user: null, error: null, loading: false });
+        set({ user: null, messages: null, error: null, loading: false });
       },
 
       // Subscribe to real-time user updates
@@ -112,13 +156,44 @@ export const useUserStore = create<UserState>()(
 
         return unsubscribe;
       },
+
+      // Subscribe to real-time message updates
+      subscribeToMessages: (userId: string) => {
+        if (!userId) return null;
+
+        const q = query(
+          collection(db, `users/${userId}/messages`),
+          orderBy("timestamp", "desc")
+        );
+
+        const unsubscribe = onSnapshot(
+          q,
+          (snapshot) => {
+            const messageData = snapshot.docs.map(
+              (doc) =>
+                ({
+                  id: doc.id,
+                  ...doc.data(),
+                } as AnonymousMessage)
+            );
+            set({ messages: messageData, error: null });
+          },
+          (error) => {
+            console.error("Error in message subscription:", error);
+            set({ error: error.message });
+          }
+        );
+
+        return unsubscribe;
+      },
     }),
     {
       name: "user-store", // Storage key
       storage: createJSONStorage(() => localStorage),
-      // Only persist the user data, not loading/error states
+      // Persist user and messages, not loading/error states
       partialize: (state) => ({
         user: state.user,
+        messages: state.messages,
       }),
     }
   )
@@ -129,3 +204,4 @@ export const useUsername = () => useUserStore((state) => state.user?.userName);
 export const useUserAvatar = () => useUserStore((state) => state.user?.avatar);
 export const useUserBio = () => useUserStore((state) => state.user?.bio);
 export const useUserEmail = () => useUserStore((state) => state.user?.email);
+export const useMessages = () => useUserStore((state) => state.messages);
