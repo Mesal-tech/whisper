@@ -5,8 +5,8 @@ import {
   HiOutlineMail,
   HiOutlineRefresh,
   HiOutlineShare,
-  HiDownload,
 } from "react-icons/hi";
+import { FaCamera } from "react-icons/fa";
 
 function Messages() {
   const userId = useUserStore((state) => state.user?.id);
@@ -17,7 +17,228 @@ function Messages() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const hasFetchedRef = useRef(false); // Ref to track if fetch has occurred (I got lazy at this point, ignore it)
+  const [screenshotLoading, setScreenshotLoading] = useState<string | null>(
+    null
+  );
+  const hasFetchedRef = useRef(false); // Ref to track if fetch has occurred (I got lazy at this point, if it works, it works)
+
+  // Helper function to safely format timestamp
+  const formatTimestamp = (timestamp: any): string => {
+    if (!timestamp) return "Just now";
+
+    try {
+      let date: Date;
+
+      // Check if it's a Firestore Timestamp
+      if (timestamp && typeof timestamp.toDate === "function") {
+        date = timestamp.toDate();
+      }
+      // Check if it's already a Date object
+      else if (timestamp instanceof Date) {
+        date = timestamp;
+      }
+      // Check if it's a timestamp number (milliseconds)
+      else if (typeof timestamp === "number") {
+        date = new Date(timestamp);
+      }
+      // Check if it's a string that can be parsed
+      else if (typeof timestamp === "string") {
+        date = new Date(timestamp);
+      }
+      // If it has seconds and nanoseconds (Firestore Timestamp-like object)
+      else if (timestamp.seconds) {
+        date = new Date(timestamp.seconds * 1000);
+      } else {
+        return "Just now";
+      }
+
+      // Validate the date
+      if (isNaN(date.getTime())) {
+        return "Just now";
+      }
+
+      return date.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        hour12: true,
+      });
+    } catch (error) {
+      console.error("Error formatting timestamp:", error);
+      return "Just now";
+    }
+  };
+
+  // Function to wrap text for canvas rendering
+  const wrapText = (
+    context: CanvasRenderingContext2D,
+    text: string,
+    maxWidth: number
+  ): string[] => {
+    const words = text.split(" ");
+    const lines: string[] = [];
+    let currentLine = "";
+
+    for (const word of words) {
+      const testLine = currentLine + (currentLine ? " " : "") + word;
+      const metrics = context.measureText(testLine);
+
+      if (metrics.width > maxWidth && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    }
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+
+    return lines;
+  };
+
+  // Function to capture message as screenshot
+  const captureMessageScreenshot = async (message: any) => {
+    setScreenshotLoading(message.id);
+
+    try {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        throw new Error("Could not create canvas context");
+      }
+
+      // Set canvas dimensions
+      const padding = 40;
+      const maxWidth = 600;
+      canvas.width = maxWidth + padding * 2;
+
+      // Set up fonts and colors
+      const backgroundColor = "#2D2D30";
+      const borderColor = "#374151";
+      const textColor = "#E5E7EB";
+      const accentColor = "#A855F7";
+      const metaColor = "#9CA3AF";
+
+      // Set initial font for measurements
+      ctx.font = "18px system-ui, -apple-system, sans-serif";
+
+      // Wrap the message text
+      const wrappedText = wrapText(ctx, message.text, maxWidth - padding * 2);
+      const textLineHeight = 28;
+      const headerHeight = 60;
+      const footerHeight = 40;
+      //@ts-ignore
+      const borderRadius = 12;
+
+      // Calculate canvas height based on content
+      const contentHeight =
+        headerHeight +
+        wrappedText.length * textLineHeight +
+        footerHeight +
+        padding * 2;
+      canvas.height = contentHeight;
+
+      // Fill background
+      ctx.fillStyle = backgroundColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw border (rounded rectangle effect)
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+
+      // Draw accent bar
+      ctx.fillStyle = accentColor;
+      ctx.fillRect(padding, padding + 10, 4, 24);
+
+      // Draw message ID
+      ctx.fillStyle = accentColor;
+      ctx.font = "bold 16px system-ui, -apple-system, sans-serif";
+      ctx.fillText(`#${message.id}`, padding + 16, padding + 28);
+
+      // Draw message text
+      ctx.fillStyle = textColor;
+      ctx.font = "18px system-ui, -apple-system, sans-serif";
+      wrappedText.forEach((line, index) => {
+        ctx.fillText(
+          line,
+          padding,
+          padding + headerHeight + index * textLineHeight
+        );
+      });
+
+      // Draw timestamp and author
+      const timestampText = `by Anonymous • ${formatTimestamp(
+        message.timestamp
+      )}`;
+      ctx.fillStyle = metaColor;
+      ctx.font = "14px system-ui, -apple-system, sans-serif";
+      ctx.fillText(
+        timestampText,
+        padding,
+        padding + headerHeight + wrappedText.length * textLineHeight + 25
+      );
+
+      // Add watermark
+      const userName = useUserStore.getState().user?.userName || "Anonymous";
+      const watermarkText = `${userName}'s Messages`;
+      ctx.fillStyle = "#6B7280";
+      ctx.font = "12px system-ui, -apple-system, sans-serif";
+      const watermarkMetrics = ctx.measureText(watermarkText);
+      ctx.fillText(
+        watermarkText,
+        canvas.width - watermarkMetrics.width - padding,
+        canvas.height - 15
+      );
+
+      // Convert canvas to blob and create download
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `message-${message.id}-${Date.now()}.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, "image/png");
+
+      // Also try to share via Web Share API if available
+      if (navigator.share && navigator.canShare) {
+        canvas.toBlob(async (blob) => {
+          if (!blob) return;
+
+          const file = new File([blob], `message-${message.id}.png`, {
+            type: "image/png",
+          });
+
+          if (navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                title: "Anonymous Message",
+                text: "Check out this message!",
+                files: [file],
+              });
+            } catch (err) {
+              console.log("Share cancelled or failed");
+            }
+          }
+        }, "image/png");
+      }
+    } catch (error) {
+      console.error("Error capturing screenshot:", error);
+      alert("Failed to capture screenshot. Please try again.");
+    } finally {
+      setScreenshotLoading(null);
+    }
+  };
 
   useEffect(() => {
     if (!userId) {
@@ -166,19 +387,20 @@ function Messages() {
                     {message.text}
                   </p>
                   <p className="text-gray-500 text-sm">
-                    by - Anonymous •{" "}
-                    {message.timestamp?.toDate().toLocaleString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "numeric",
-                      minute: "numeric",
-                      hour12: true,
-                    }) || "Just now"}
+                    by - Anonymous • {formatTimestamp(message.timestamp)}
                   </p>
                 </div>
-                <button className="text-gray-500 hover:text-gray-400 ml-2">
-                  <HiDownload className="w-5 h-5" />
+                <button
+                  onClick={() => captureMessageScreenshot(message)}
+                  disabled={screenshotLoading === message.id}
+                  className="text-gray-500 hover:text-gray-400 ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Save as image"
+                >
+                  {screenshotLoading === message.id ? (
+                    <div className="animate-spin w-5 h-5 border-2 border-gray-500 border-t-transparent rounded-full" />
+                  ) : (
+                    <FaCamera className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             ))
