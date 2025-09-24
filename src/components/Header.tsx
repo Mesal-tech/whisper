@@ -4,13 +4,14 @@ import { signOut } from "firebase/auth";
 import { MdLogout, MdClose } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
-import { useUserStore, useUsername } from "../store/userStore"; // Import userStore
+import { useUserStore, useUsername, useUserPoints } from "../store/userStore"; // Import userStore
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Header() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const username = useUsername(); // Get username from userStore
+  const userPoints = useUserPoints(); // Get user points from userStore
   const { clearUser, fetchUser, subscribeToUser } = useUserStore(); // Get userStore actions
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -91,64 +92,75 @@ export default function Header() {
               className="h-10 w-auto"
             />
 
-            <div className="relative">
-              <img
-                src={user.photoURL || "https://via.placeholder.com/40"}
-                alt={user.displayName || "User"}
-                className="profile-image w-10 h-10 rounded-full border-2 border-gray-200 cursor-pointer hover:border-gray-300 transition-colors"
-                onClick={() => setShowProfilePopup(!showProfilePopup)}
-              />
+            <div className="flex items-center space-x-3">
+              {/* Points Display */}
+              <div className="bg-purple-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                {userPoints} pts
+              </div>
 
-              {/* Profile Popup */}
-              <AnimatePresence>
-                {showProfilePopup && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="profile-popup absolute right-0 top-12 bg-black rounded-xl shadow-lg border border-white w-70 z-50"
-                  >
-                    {/* Profile Header */}
-                    <div className="p-4 border-b">
-                      <div className="flex items-center space-x-3">
-                        <img
-                          src={
-                            user.photoURL || "https://via.placeholder.com/60"
-                          }
-                          alt="User"
-                          className="w-12 h-12 rounded-full border-2 border-gray-200"
-                        />
-                        <div className="flex-1">
-                          <p className="text-lg font-medium text-white">
-                            {username || "Loading..."}
-                          </p>
-                          <p className="text-[12px] text-gray-300 break-all">
-                            {user.email}
-                          </p>
+              {/* Profile Picture */}
+              <div className="relative">
+                <img
+                  src={user.photoURL || "https://via.placeholder.com/40"}
+                  alt={user.displayName || "User"}
+                  className="profile-image w-10 h-10 rounded-full border-2 border-gray-200 cursor-pointer hover:border-gray-300 transition-colors"
+                  onClick={() => setShowProfilePopup(!showProfilePopup)}
+                />
+
+                {/* Profile Popup */}
+                <AnimatePresence>
+                  {showProfilePopup && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      className="profile-popup absolute right-0 top-12 bg-black rounded-xl shadow-lg border border-white w-70 z-50"
+                    >
+                      {/* Profile Header */}
+                      <div className="p-4 border-b">
+                        <div className="flex items-center space-x-3">
+                          <img
+                            src={
+                              user.photoURL || "https://via.placeholder.com/60"
+                            }
+                            alt="User"
+                            className="w-12 h-12 rounded-full border-2 border-gray-200"
+                          />
+                          <div className="flex-1">
+                            <p className="text-lg font-medium text-white">
+                              {username || "Loading..."}
+                            </p>
+                            <p className="text-[12px] text-gray-300 break-all">
+                              {user.email}
+                            </p>
+                            <p className="text-sm text-purple-400 font-medium">
+                              {userPoints} points
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => setShowProfilePopup(false)}
+                            className="p-1 bg-gray-100 rounded-full"
+                          >
+                            <MdClose className="w-4 h-4 text-black" />
+                          </button>
                         </div>
+                      </div>
+
+                      {/* Logout Button */}
+                      <div className="p-4">
                         <button
-                          onClick={() => setShowProfilePopup(false)}
-                          className="p-1 bg-gray-100 rounded-full"
+                          onClick={handleLogoutClick}
+                          className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
                         >
-                          <MdClose className="w-4 h-4 text-black" />
+                          <MdLogout className="w-4 h-4" />
+                          <span>Sign Out</span>
                         </button>
                       </div>
-                    </div>
-
-                    {/* Logout Button */}
-                    <div className="p-4">
-                      <button
-                        onClick={handleLogoutClick}
-                        className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                      >
-                        <MdLogout className="w-4 h-4" />
-                        <span>Sign Out</span>
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </div>

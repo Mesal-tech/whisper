@@ -48,6 +48,10 @@ export const useUserStore = create<UserState>()(
 
           if (userDoc.exists()) {
             const userData = userDoc.data() as User;
+            // Ensure points field exists with default value
+            if (!userData.points) {
+              userData.points = "0";
+            }
             set({ user: userData, loading: false });
           } else {
             set({
@@ -124,6 +128,9 @@ export const useUserStore = create<UserState>()(
 
       // Set user directly (useful for login scenarios)
       setUser: (user: User | null) => {
+        if (user && !user.points) {
+          user.points = "0"; // Ensure points field exists with default value
+        }
         set({ user, error: null });
       },
 
@@ -143,6 +150,10 @@ export const useUserStore = create<UserState>()(
           (doc) => {
             if (doc.exists()) {
               const userData = doc.data() as User;
+              // Ensure points field exists with default value
+              if (!userData.points) {
+                userData.points = "0";
+              }
               set({ user: userData, error: null });
             } else {
               set({ user: null, error: "User not found" });
@@ -204,4 +215,6 @@ export const useUsername = () => useUserStore((state) => state.user?.userName);
 export const useUserAvatar = () => useUserStore((state) => state.user?.avatar);
 export const useUserBio = () => useUserStore((state) => state.user?.bio);
 export const useUserEmail = () => useUserStore((state) => state.user?.email);
+export const useUserPoints = () =>
+  useUserStore((state) => state.user?.points || "0");
 export const useMessages = () => useUserStore((state) => state.messages);

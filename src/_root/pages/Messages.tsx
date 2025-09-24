@@ -356,7 +356,7 @@ function Messages() {
             </button>
           </div>
         </div>
-        <div className="space-y-4">
+        <div className="max-h-96 overflow-y-auto space-y-4">
           {messages?.length === 0 ? (
             <div className="bg-[#2D2D30] border border-gray-700 rounded-lg shadow p-4 text-center">
               <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">

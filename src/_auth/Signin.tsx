@@ -61,7 +61,7 @@ function Signin() {
       let userData: User;
 
       if (!userDoc.exists()) {
-        // Create a new user document
+        // Create a new user document with points field
         userData = {
           id: firebaseUser.uid,
           userName: generateRandomUsername(),
@@ -69,11 +69,18 @@ function Signin() {
           createdAt: Timestamp.now(),
           avatar: firebaseUser.photoURL || "",
           bio: "",
+          points: "0", // Default points to "0"
         };
         await setDoc(userDocRef, userData);
       } else {
         // Get existing user data
         userData = userDoc.data() as User;
+        // Ensure points field exists for existing users
+        if (!userData.points) {
+          userData.points = "0";
+          // Update the document in Firestore to include points
+          await setDoc(userDocRef, userData, { merge: true });
+        }
       }
 
       // Set both auth and user data

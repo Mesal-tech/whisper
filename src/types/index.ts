@@ -7,6 +7,7 @@ export interface User {
   createdAt: Timestamp;
   avatar?: string;
   bio?: string;
+  points: string;
 }
 
 export interface AnonymousMessage {
