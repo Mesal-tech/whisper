@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { FcGoogle } from "react-icons/fc";
 import { useAuthStore } from "../store/authStore";
-import { useUserStore } from "../store/userStore"; // Import the new user store
+import { useUserStore } from "../store/userStore";
 import { motion, AnimatePresence } from "framer-motion";
 import type { User } from "../types";
 
@@ -26,7 +26,7 @@ function Signin() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const setAuthUser = useAuthStore((state) => state.setUser);
-  const { setUser, subscribeToUser } = useUserStore(); // Use the user store
+  const { setUser, subscribeToUser } = useUserStore();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [animationDirection, setAnimationDirection] = useState(0);
 
@@ -61,7 +61,7 @@ function Signin() {
       let userData: User;
 
       if (!userDoc.exists()) {
-        // Create a new user document with points field
+        // Create a new user document with all trial fields
         userData = {
           id: firebaseUser.uid,
           userName: generateRandomUsername(),
@@ -70,15 +70,34 @@ function Signin() {
           avatar: firebaseUser.photoURL || "",
           bio: "",
           points: "0", // Default points to "0"
+          freeThreadsRemaining: 3, // Default free threads to 3
+          hasSeenRefillPrompt: false, // Default to false
         };
         await setDoc(userDocRef, userData);
       } else {
         // Get existing user data
         userData = userDoc.data() as User;
-        // Ensure points field exists for existing users
+
+        // Ensure all new fields exist for existing users
+        let needsUpdate = false;
+
         if (!userData.points) {
           userData.points = "0";
-          // Update the document in Firestore to include points
+          needsUpdate = true;
+        }
+
+        if (userData.freeThreadsRemaining === undefined) {
+          userData.freeThreadsRemaining = 3;
+          needsUpdate = true;
+        }
+
+        if (userData.hasSeenRefillPrompt === undefined) {
+          userData.hasSeenRefillPrompt = false;
+          needsUpdate = true;
+        }
+
+        // Update the document in Firestore if any fields were missing
+        if (needsUpdate) {
           await setDoc(userDocRef, userData, { merge: true });
         }
       }

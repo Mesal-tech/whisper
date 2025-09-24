@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import type { User } from "../types";
-import type { AnonymousMessage } from "../types"; // Adjust path to your types file
+import type { AnonymousMessage } from "../types";
 
 interface UserState {
   user: User | null;
@@ -48,10 +48,12 @@ export const useUserStore = create<UserState>()(
 
           if (userDoc.exists()) {
             const userData = userDoc.data() as User;
-            // Ensure points field exists with default value
-            if (!userData.points) {
-              userData.points = "0";
-            }
+            // Ensure all fields exist with default values
+            if (!userData.points) userData.points = "0";
+            if (userData.freeThreadsRemaining === undefined)
+              userData.freeThreadsRemaining = 3;
+            if (userData.hasSeenRefillPrompt === undefined)
+              userData.hasSeenRefillPrompt = false;
             set({ user: userData, loading: false });
           } else {
             set({
@@ -128,8 +130,13 @@ export const useUserStore = create<UserState>()(
 
       // Set user directly (useful for login scenarios)
       setUser: (user: User | null) => {
-        if (user && !user.points) {
-          user.points = "0"; // Ensure points field exists with default value
+        if (user) {
+          // Ensure all fields exist with default values
+          if (!user.points) user.points = "0";
+          if (user.freeThreadsRemaining === undefined)
+            user.freeThreadsRemaining = 3;
+          if (user.hasSeenRefillPrompt === undefined)
+            user.hasSeenRefillPrompt = false;
         }
         set({ user, error: null });
       },
@@ -150,10 +157,12 @@ export const useUserStore = create<UserState>()(
           (doc) => {
             if (doc.exists()) {
               const userData = doc.data() as User;
-              // Ensure points field exists with default value
-              if (!userData.points) {
-                userData.points = "0";
-              }
+              // Ensure all fields exist with default values
+              if (!userData.points) userData.points = "0";
+              if (userData.freeThreadsRemaining === undefined)
+                userData.freeThreadsRemaining = 3;
+              if (userData.hasSeenRefillPrompt === undefined)
+                userData.hasSeenRefillPrompt = false;
               set({ user: userData, error: null });
             } else {
               set({ user: null, error: "User not found" });
@@ -199,9 +208,8 @@ export const useUserStore = create<UserState>()(
       },
     }),
     {
-      name: "user-store", // Storage key
+      name: "user-store",
       storage: createJSONStorage(() => localStorage),
-      // Persist user and messages, not loading/error states
       partialize: (state) => ({
         user: state.user,
         messages: state.messages,
@@ -217,4 +225,8 @@ export const useUserBio = () => useUserStore((state) => state.user?.bio);
 export const useUserEmail = () => useUserStore((state) => state.user?.email);
 export const useUserPoints = () =>
   useUserStore((state) => state.user?.points || "0");
+export const useFreeThreadsRemaining = () =>
+  useUserStore((state) => state.user?.freeThreadsRemaining || 0);
+export const useHasSeenRefillPrompt = () =>
+  useUserStore((state) => state.user?.hasSeenRefillPrompt || false);
 export const useMessages = () => useUserStore((state) => state.messages);

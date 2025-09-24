@@ -8,6 +8,8 @@ export interface User {
   avatar?: string;
   bio?: string;
   points: string;
+  freeThreadsRemaining: number;
+  hasSeenRefillPrompt: boolean;
 }
 
 export interface AnonymousMessage {

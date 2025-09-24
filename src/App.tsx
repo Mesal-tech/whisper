@@ -10,7 +10,7 @@ import AnonMessage from "./_root/pages/AnonMessage";
 
 function App() {
   return (
-    <div className="min-h-screen bg-[#111111]">
+    <div className="bg-[#111111]">
       <Router>
         <Routes>
           {/* Auth routes */}

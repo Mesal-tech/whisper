@@ -2,7 +2,13 @@ import { useState, useRef, useEffect } from "react";
 import { HiPaperAirplane, HiReply, HiX, HiExternalLink } from "react-icons/hi";
 import { FaPaperclip } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
-import { useUserStore, useUserPoints } from "../store/userStore";
+import { useNavigate } from "react-router-dom";
+import {
+  useUserStore,
+  useUserPoints,
+  useFreeThreadsRemaining,
+  useHasSeenRefillPrompt,
+} from "../store/userStore";
 import { auth } from "../lib/firebase";
 import type { Message } from "../types";
 
@@ -180,7 +186,59 @@ function UrlPreviewCard({
   );
 }
 
-// Insufficient Points Modal Component
+// First-time refill prompt modal
+function RefillPromptModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="bg-[#1c1c1c] rounded-xl shadow-xl max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-transprent rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-6xl">✨</span>
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                Ready for More Threads?
+              </h3>
+              <p className="text-gray-400 mb-4">
+                You've used all your free threads! Earn points by participating
+                in conversations to create more threads and keep the discussion
+                going.
+              </p>
+              <button
+                onClick={onClose}
+                className="w-full px-4 py-2 text-lg font-medium text-white bg-blue-500 rounded-lg"
+              >
+                Got it!
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// Standard insufficient points modal
 function InsufficientPointsModal({
   isOpen,
   onClose,
@@ -245,12 +303,16 @@ function InputBox({
   const [isThreadMode, setIsThreadMode] = useState(false);
   const [urlPreviews, setUrlPreviews] = useState<UrlPreview[]>([]);
   const [loadingPreviews, setLoadingPreviews] = useState<string[]>([]);
+  const [showRefillPrompt, setShowRefillPrompt] = useState(false);
   const [showInsufficientPointsModal, setShowInsufficientPointsModal] =
     useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const navigate = useNavigate();
   const userPoints = useUserPoints();
+  const freeThreadsRemaining = useFreeThreadsRemaining();
+  const hasSeenRefillPrompt = useHasSeenRefillPrompt();
   const { updateUser } = useUserStore();
 
   const handleSend = async () => {
@@ -267,23 +329,51 @@ function InputBox({
 
     if (!messageText.trim()) return; // Don't send empty messages after removing command
 
-    // Check if user has enough points for thread
+    // Thread logic with trial system
     if (messageType === "thread") {
-      const currentPoints = parseInt(userPoints) || 0;
-      if (currentPoints < 1) {
-        setShowInsufficientPointsModal(true);
-        return; // Don't send the thread
+      const userId = auth.currentUser?.uid;
+      if (!userId) {
+        navigate("/auth/signin");
+        return;
       }
 
-      // Deduct 1 point before sending thread
-      const userId = auth.currentUser?.uid;
-      if (userId) {
+      // Priority: Free threads first, then paid points
+      if (freeThreadsRemaining > 0) {
+        // Use free thread
+        try {
+          await updateUser(userId, {
+            freeThreadsRemaining: freeThreadsRemaining - 1,
+          });
+        } catch (error) {
+          console.error("Error updating free threads:", error);
+        }
+      } else {
+        // No free threads left, check points
+        const currentPoints = parseInt(userPoints) || 0;
+
+        if (currentPoints < 1) {
+          // No points either - show appropriate modal
+          if (!hasSeenRefillPrompt) {
+            // First time seeing this - show refill prompt and mark as seen
+            setShowRefillPrompt(true);
+            try {
+              await updateUser(userId, { hasSeenRefillPrompt: true });
+            } catch (error) {
+              console.error("Error updating refill prompt flag:", error);
+            }
+          } else {
+            // Already seen refill prompt - show standard insufficient message
+            setShowInsufficientPointsModal(true);
+          }
+          return; // Don't send the thread
+        }
+
+        // Has points - deduct 1 point
         const newPoints = Math.max(0, currentPoints - 1).toString();
         try {
           await updateUser(userId, { points: newPoints });
         } catch (error) {
           console.error("Error updating points:", error);
-          // Still allow the thread to be sent even if points update fails
         }
       }
     }
@@ -304,21 +394,18 @@ function InputBox({
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
         navigator.userAgent
       ) ||
-      window.innerWidth <= 768 || // Fallback for smaller screens
+      window.innerWidth <= 768 ||
       "ontouchstart" in window
-    ); // Touch support detection
+    );
   }
 
-  // Replace the existing handleKeyPress function with this:
   const handleKeyPress = (e: React.KeyboardEvent) => {
     const isMobile = isMobileDevice();
 
     if (e.key === "Enter") {
       if (isMobile) {
-        // On mobile: Enter creates line break, don't send
         return;
       } else {
-        // On desktop: Enter sends (unless Shift is held)
         if (!e.shiftKey) {
           e.preventDefault();
           handleSend();
@@ -332,10 +419,8 @@ function InputBox({
     setText(value);
     setIsTyping(value.length > 0);
 
-    // Check if user is typing a thread command
     setIsThreadMode(value.startsWith("/thread "));
 
-    // Debounce URL detection
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
@@ -354,10 +439,8 @@ function InputBox({
       return;
     }
 
-    // Take only the first URL for preview (like WhatsApp)
     const firstUrl = urls[0];
 
-    // Check if we already have this preview
     if (
       urlPreviews.some((p) => p.url === firstUrl) ||
       loadingPreviews.includes(firstUrl)
@@ -388,7 +471,7 @@ function InputBox({
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       const scrollHeight = textareaRef.current.scrollHeight;
-      const maxHeight = 120; // Maximum height in pixels (approximately 5-6 lines)
+      const maxHeight = 120;
       const newHeight = Math.min(scrollHeight, maxHeight);
       textareaRef.current.style.height = `${newHeight}px`;
     }
@@ -403,6 +486,14 @@ function InputBox({
     };
   }, []);
 
+  // Generate thread cost display text
+  const getThreadCostText = () => {
+    if (freeThreadsRemaining > 0) {
+      return `Free (${freeThreadsRemaining} left)`;
+    }
+    return "Costs 1 point";
+  };
+
   return (
     <>
       <div className="fixed bottom-0 left-0 right-0 bg-[#111111] z-50">
@@ -412,7 +503,6 @@ function InputBox({
             <div className="bg-[#121212] rounded-lg shadow-lg">
               <div className="flex items-start justify-between p-3">
                 <div className="flex-1">
-                  {/* Reply Header */}
                   <div className="flex items-center gap-2 mb-2">
                     <HiReply className="w-4 h-4 text-blue-400" />
                     <span className="text-xs font-medium text-blue-400">
@@ -425,7 +515,6 @@ function InputBox({
                     )}
                   </div>
 
-                  {/* Message Preview */}
                   <div className="bg-gray-800/30 border border-gray-900 rounded p-2">
                     <p
                       className="text-sm text-gray-200 line-clamp-2 break-all"
@@ -438,7 +527,6 @@ function InputBox({
                   </div>
                 </div>
 
-                {/* Close Button */}
                 <button
                   onClick={onCancelReply}
                   className="text-gray-400 hover:text-white ml-3 p-1 hover:bg-gray-700 rounded transition-all duration-200"
@@ -470,22 +558,17 @@ function InputBox({
             </div>
           )}
 
-          {/* Thread mode indicator with points cost */}
+          {/* Thread mode indicator with dynamic cost */}
           {isThreadMode && (
-            <div className="flex items-center justify-between mb-2 text-sm">
-              <div className="flex items-center">
-                <div className="bg-purple-500/20 text-xs text-purple-300 px-3 py-1 rounded-full border border-purple-500/30 flex items-center gap-2">
-                  Thread • Costs 1 point
-                </div>
-                <span className="text-gray-400 ml-2">
-                  Your message will appear as a thread
-                </span>
-              </div>
-              <div className="text-xs text-gray-400">
-                Your points:{" "}
-                <span className="text-purple-400 font-medium">
-                  {userPoints}
-                </span>
+            <div className="flex items-center mb-2 text-sm">
+              <div
+                className={`text-xs px-3 py-1 rounded-full border flex items-center gap-2 ${
+                  freeThreadsRemaining > 0
+                    ? "bg-green-500/20 text-green-300 border-green-500/30"
+                    : "bg-purple-500/20 text-purple-300 border-purple-500/30"
+                }`}
+              >
+                Thread • {getThreadCostText()}
               </div>
             </div>
           )}
@@ -502,14 +585,15 @@ function InputBox({
           <div
             className={`relative bg-[#1b1b1b] rounded-4xl focus-within:ring-1 transition-all duration-200 py-1 ${
               isThreadMode
-                ? "border border-purple-500/50 focus-within:border-purple-500 focus-within:ring-purple-500"
+                ? freeThreadsRemaining > 0
+                  ? "border border-green-500/50 focus-within:border-green-500 focus-within:ring-green-500"
+                  : "border border-purple-500/50 focus-within:border-purple-500 focus-within:ring-purple-500"
                 : replyTo
                 ? "border border-blue-500/50 focus-within:border-blue-500 focus-within:ring-blue-500"
                 : "focus-within:border-blue-500 focus-within:ring-blue-500"
             }`}
           >
             <div className="flex items-end">
-              {/* Clip Button */}
               <button
                 className="p-3 text-gray-400 hover:text-white transition-colors duration-200 flex-shrink-0 flex items-center justify-center"
                 onClick={() => {
@@ -520,7 +604,6 @@ function InputBox({
                 <FaPaperclip className="w-6 h-6" />
               </button>
 
-              {/* Textarea */}
               <textarea
                 ref={textareaRef}
                 value={text}
@@ -535,14 +618,15 @@ function InputBox({
                 maxLength={500}
               />
 
-              {/* Send Button */}
               <button
                 onClick={handleSend}
                 disabled={!text.trim() || disabled}
                 className={`p-3 transition-all duration-200 flex-shrink-0 bg-[#373737] rounded-full mr-2 flex items-center justify-center ${
                   text.trim() && !disabled
                     ? isThreadMode
-                      ? "text-purple-500 hover:text-purple-400 transform hover:scale-105 active:scale-95"
+                      ? freeThreadsRemaining > 0
+                        ? "text-green-500 hover:text-green-400 transform hover:scale-105 active:scale-95"
+                        : "text-purple-500 hover:text-purple-400 transform hover:scale-105 active:scale-95"
                       : replyTo
                       ? "text-blue-500 hover:text-blue-400 transform hover:scale-105 active:scale-95"
                       : "text-blue-500 hover:text-blue-400 transform hover:scale-105 active:scale-95"
@@ -558,20 +642,16 @@ function InputBox({
             </div>
           </div>
 
-          {/* Command hint with points info */}
+          {/* Command hint with full width */}
           {text === "/thread" && (
-            <div className="mt-2 text-xs text-gray-400 flex items-center justify-between">
+            <div className="mt-2 text-xs text-gray-400">
               <span className="bg-gray-800 px-2 py-1 rounded">
                 Type "/thread your message" to create a thread
-              </span>
-              <span className="text-purple-400">
-                Cost: 1 point | Your points: {userPoints}
               </span>
             </div>
           )}
         </div>
 
-        {/* Custom scrollbar styles for webkit browsers */}
         <style>{`
           textarea::-webkit-scrollbar {
             width: 4px;
@@ -595,7 +675,13 @@ function InputBox({
         `}</style>
       </div>
 
-      {/* Insufficient Points Modal */}
+      {/* First-time Refill Prompt Modal */}
+      <RefillPromptModal
+        isOpen={showRefillPrompt}
+        onClose={() => setShowRefillPrompt(false)}
+      />
+
+      {/* Standard Insufficient Points Modal */}
       <InsufficientPointsModal
         isOpen={showInsufficientPointsModal}
         onClose={() => setShowInsufficientPointsModal(false)}
