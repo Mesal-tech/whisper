@@ -323,15 +323,24 @@ function MessageBubble({
         <div className="w-full relative">
           {/* Main Thread Bubble */}
           <div
-            className={`w-full p-4 shadow-sm transition-all duration-200 ${getBorderRadius()} ${
-              isHighlighted
-                ? "bg-blue-500 shadow-lg shadow-blue-500/20"
-                : "bg-blue-500"
-            }`}
+            className={`w-full mx-auto max-w-[30rem] p-4 shadow-sm transition-all duration-200 ${getBorderRadius()} bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-white/20 hover:bg-white/10 transition-all duration-500 overflow-hidden`}
             onPointerDown={handleLongPressStart}
             onPointerUp={handleLongPressEnd}
             onPointerLeave={handleLongPressEnd}
           >
+            {/* Background gradient */}
+            <motion.div
+              className={`absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 opacity-3 blur-xl -z-10`}
+              animate={{
+                scale: [1, 1.02, 1],
+                opacity: [0.03, 0.05, 0.03]
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity
+              }}
+            />
+
             <div className="flex items-center justify-center gap-2 mb-3">
               <span className="text-lg font-medium text-white">
                 What do you think?
@@ -345,7 +354,7 @@ function MessageBubble({
             </div>
 
             {/* Nested Message */}
-            <div className="bg-gray-800 rounded-xl p-3">
+            <div className="bg-white/5 text-center rounded-xl border border-white/10 group-hover:bg-white/10 transition-colors p-3">
               {repliedToMessage && (
                 <div
                   className="mb-3 p-2 bg-gray-700/50 border border-gray-600/30 rounded cursor-pointer hover:bg-gray-700/70 transition-colors"
@@ -372,26 +381,28 @@ function MessageBubble({
               />
             </div>
 
-            {showTimestamp && message.timestamp && (
-              <div className="flex items-center mt-3 text-xs text-white/80">
-                <span>{formatTime(message.timestamp)}</span>
-                <span className="mx-2">•</span>
-                <span>Thread</span>
-              </div>
-            )}
-          </div>
+            <div className="flex items-center justify-between">
+              {showTimestamp && message.timestamp && (
+                <div className="flex items-center mt-3 text-xs text-white/80">
+                  <span>{formatTime(message.timestamp)}</span>
+                  <span className="mx-2">•</span>
+                  <span>Thread</span>
+                </div>
+              )}
 
-          {/* Reply Button - Outside and Bottom Right */}
-          {onThreadReply && (
-            <div className="flex justify-end mt-2">
-              <button
-                onClick={() => onThreadReply?.(message)}
-                className="text-xs bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors shadow-sm"
-              >
-                Reply
-              </button>
+              {/* Reply Button - Outside and Bottom Right */}
+              {onThreadReply && (
+                <div className="flex justify-end mt-2">
+                  <button
+                    onClick={() => onThreadReply?.(message)}
+                    className="text-xs bg-purple-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors shadow-sm"
+                  >
+                    Join Discussion
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         <BottomSheet
@@ -407,14 +418,12 @@ function MessageBubble({
 
   return (
     <div
-      className={`flex group relative select-none ${getMarginTop()} ${
-        isCurrentUser ? "justify-end" : "justify-start"
-      }`}
+      className={`flex group relative select-none ${getMarginTop()} ${isCurrentUser ? "justify-end" : "justify-start"
+        }`}
     >
       <div
-        className={`max-w-[40vh] lg:max-w-md relative ${
-          isCurrentUser ? "ml-auto" : "mr-auto"
-        }`}
+        className={`max-w-[40vh] lg:max-w-md relative ${isCurrentUser ? "ml-auto" : "mr-auto"
+          }`}
       >
         <motion.div
           drag="x"
@@ -438,17 +447,16 @@ function MessageBubble({
           </motion.div>
 
           <div
-            className={`p-3 select-none shadow-sm transition-all duration-200 hover:shadow-md ${getBorderRadius()} ${
-              isSending
-                ? "bg-gray-600 text-white"
-                : isCurrentUser
+            className={`p-3 select-none shadow-sm transition-all duration-200 hover:shadow-md ${getBorderRadius()} ${isSending
+              ? "bg-gray-600 text-white"
+              : isCurrentUser
                 ? isHighlighted
                   ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
                   : "bg-blue-500 text-white"
                 : isHighlighted
-                ? "bg-gray-700 text-white shadow-lg shadow-gray-500/20"
-                : "bg-gray-800 text-white"
-            }`}
+                  ? "bg-gray-700 text-white shadow-lg shadow-gray-500/20"
+                  : "bg-gray-800 text-white"
+              }`}
           >
             <div className="flex flex-col">
               {isFirstInTimeGroup && !isCurrentUser && (
@@ -461,11 +469,10 @@ function MessageBubble({
 
               {repliedToMessage && (
                 <div
-                  className={`mb-2 p-2 rounded border-l-2 cursor-pointer transition-all duration-200 ${
-                    isCurrentUser
-                      ? "bg-blue-600/30 border-blue-300 hover:bg-blue-600/40"
-                      : "bg-gray-700/50 border-gray-400 hover:bg-gray-700/70"
-                  }`}
+                  className={`mb-2 p-2 rounded border-l-2 cursor-pointer transition-all duration-200 ${isCurrentUser
+                    ? "bg-blue-600/30 border-blue-300 hover:bg-blue-600/40"
+                    : "bg-gray-700/50 border-gray-400 hover:bg-gray-700/70"
+                    }`}
                   onClick={handleReplyClick}
                 >
                   <div className="flex items-center gap-2 mb-1">
@@ -495,9 +502,8 @@ function MessageBubble({
 
         {isLastInTimeGroup && (
           <div
-            className={`mt-1 text-xs text-gray-400 ${
-              isCurrentUser ? "text-right" : "text-left"
-            }`}
+            className={`mt-1 text-xs text-gray-400 ${isCurrentUser ? "text-right" : "text-left"
+              }`}
           >
             {isSending ? (
               <div className="flex items-center gap-1 justify-end">
@@ -506,9 +512,8 @@ function MessageBubble({
               </div>
             ) : showTimestamp && message.timestamp ? (
               <div
-                className={`flex items-center gap-1 ${
-                  isCurrentUser ? "justify-end" : "justify-start"
-                }`}
+                className={`flex items-center gap-1 ${isCurrentUser ? "justify-end" : "justify-start"
+                  }`}
               >
                 <span className="text-[12px]">
                   {formatTime(message.timestamp)}

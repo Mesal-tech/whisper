@@ -84,9 +84,8 @@ async function fetchUrlPreview(url: string): Promise<UrlPreview | null> {
       favicon = faviconLink.getAttribute("href") || "";
       if (favicon && !favicon.startsWith("http")) {
         const baseUrl = new URL(url);
-        favicon = `${baseUrl.protocol}//${baseUrl.host}${
-          favicon.startsWith("/") ? "" : "/"
-        }${favicon}`;
+        favicon = `${baseUrl.protocol}//${baseUrl.host}${favicon.startsWith("/") ? "" : "/"
+          }${favicon}`;
       }
     } else {
       // Fallback to default favicon location
@@ -515,144 +514,150 @@ function InputBox({
                   )}
                 </div>
 
-                  <div className="bg-gray-800/30 border border-gray-900 rounded p-2">
-                    <p
-                      className="text-sm text-gray-200 line-clamp-2 break-all"
-                      style={{ overflowWrap: "break-word" }}
-                    >
-                      {replyTo.text.length > 100
-                        ? `${replyTo.text.substring(0, 100)}...`
-                        : replyTo.text}
-                    </p>
-                  </div>
+                <div className="bg-gray-800/30 border border-gray-900 rounded p-2">
+                  <p
+                    className="text-sm text-gray-200 line-clamp-2 break-all"
+                    style={{ overflowWrap: "break-word" }}
+                  >
+                    {replyTo.text.length > 100
+                      ? `${replyTo.text.substring(0, 100)}...`
+                      : replyTo.text}
+                  </p>
                 </div>
-
-                <button
-                  onClick={onCancelReply}
-                  className="text-gray-400 hover:text-white ml-3 p-1 hover:bg-gray-700 rounded transition-all duration-200"
-                >
-                  <HiX className="w-4 h-4" />
-                </button>
               </div>
-            </div>
-          )}
-
-          {/* URL Previews */}
-          {urlPreviews.map((preview) => (
-            <UrlPreviewCard
-              key={preview.url}
-              preview={preview}
-              onRemove={() => removePreview(preview.url)}
-            />
-          ))}
-
-          {/* Loading Preview */}
-          {loadingPreviews.length > 0 && (
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-sm text-gray-400">
-                  Loading preview...
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Thread mode indicator with dynamic cost */}
-          {isThreadMode && (
-            <div className="flex items-center mb-2 text-sm">
-              <div
-                className={`text-xs px-3 py-1 rounded-full border flex items-center gap-2 ${
-                  freeThreadsRemaining > 0
-                    ? "bg-green-500/20 text-green-300 border-green-500/30"
-                    : "bg-purple-500/20 text-purple-300 border-purple-500/30"
-                }`}
-              >
-                Thread • {getThreadCostText()}
-              </div>
-            </div>
-          )}
-
-          {/* Character count for long messages */}
-          {text.length > 400 && (
-            <div className="flex justify-end mb-2">
-              <span className="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded">
-                {text.length}/500
-              </span>
-            </div>
-          )}
-
-          <div
-            className={`relative bg-[#1b1b1b] rounded-4xl focus-within:ring-1 transition-all duration-200 py-1 ${
-              isThreadMode
-                ? freeThreadsRemaining > 0
-                  ? "border border-green-500/50 focus-within:border-green-500 focus-within:ring-green-500"
-                  : "border border-purple-500/50 focus-within:border-purple-500 focus-within:ring-purple-500"
-                : replyTo
-                ? "border border-blue-500/50 focus-within:border-blue-500 focus-within:ring-blue-500"
-                : "focus-within:border-blue-500 focus-within:ring-blue-500"
-            }`}
-          >
-            <div className="flex items-end">
-              <button
-                className="p-3 text-gray-400 hover:text-white transition-colors duration-200 flex-shrink-0 flex items-center justify-center"
-                onClick={() => {
-                  /* Media Selection */
-                }}
-                disabled={disabled}
-              >
-                <FaPaperclip className="w-6 h-6" />
-              </button>
-
-              <textarea
-                ref={textareaRef}
-                value={text}
-                onChange={handleInputChange}
-                onKeyPress={handleKeyPress}
-                placeholder={isThreadMode ? "Thread content..." : placeholder}
-                disabled={disabled}
-                rows={1}
-                className={`flex-1 bg-transparent text-white py-3 px-1 resize-none focus:outline-none placeholder-gray-400 min-h-[24px] max-h-[120px] overflow-y-auto ${
-                  disabled ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-                maxLength={500}
-              />
 
               <button
-                onClick={handleSend}
-                disabled={!text.trim() || disabled}
-                className={`p-3 transition-all duration-200 flex-shrink-0 bg-[#373737] rounded-full mr-2 flex items-center justify-center ${
-                  text.trim() && !disabled
-                    ? isThreadMode
-                      ? freeThreadsRemaining > 0
-                        ? "text-green-500 hover:text-green-400 transform hover:scale-105 active:scale-95"
-                        : "text-purple-500 hover:text-purple-400 transform hover:scale-105 active:scale-95"
-                      : replyTo
-                      ? "text-blue-500 hover:text-blue-400 transform hover:scale-105 active:scale-95"
-                      : "text-blue-500 hover:text-blue-400 transform hover:scale-105 active:scale-95"
-                    : "text-gray-500 cursor-not-allowed"
-                }`}
+                onClick={onCancelReply}
+                className="text-gray-400 hover:text-white ml-3 p-1 hover:bg-gray-700 rounded transition-all duration-200"
               >
-                <HiPaperAirplane
-                  className={`w-5 h-5 ${
-                    isTyping ? "transform rotate-45" : ""
-                  } transition-transform duration-200`}
-                />
+                <HiX className="w-4 h-4" />
               </button>
             </div>
           </div>
+        )}
 
-          {/* Command hint with full width */}
-          {text === "/thread" && (
-            <div className="mt-2 text-xs text-gray-400">
-              <span className="bg-gray-800 px-2 py-1 rounded">
-                Type "/thread your message" to create a thread
+        {/* URL Previews */}
+        {urlPreviews.map((preview) => (
+          <UrlPreviewCard
+            key={preview.url}
+            preview={preview}
+            onRemove={() => removePreview(preview.url)}
+          />
+        ))}
+
+        {/* Loading Preview */}
+        {loadingPreviews.length > 0 && (
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm text-gray-400">
+                Loading preview...
               </span>
             </div>
-          )}
+          </div>
+        )}
+
+        {/* Thread mode indicator with dynamic cost */}
+        {isThreadMode && (
+          <div className="flex items-center mb-2 text-sm">
+            <div
+              className={`text-xs px-3 py-1 rounded-full border flex items-center gap-2 ${freeThreadsRemaining > 0
+                ? "bg-green-500/20 text-green-300 border-green-500/30"
+                : "bg-purple-500/20 text-purple-300 border-purple-500/30"
+                }`}
+            >
+              Thread • {getThreadCostText()}
+            </div>
+          </div>
+        )}
+
+        {/* Character count for long messages */}
+        {text.length > 400 && (
+          <div className="flex justify-end mb-2">
+            <span className="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded">
+              {text.length}/500
+            </span>
+          </div>
+        )}
+
+        <div
+          className={`relative bg-[#1b1b1b] rounded-4xl focus-within:ring-1 transition-all duration-200 py-1 ${isThreadMode
+            ? freeThreadsRemaining > 0
+              ? "border border-green-500/50 focus-within:border-green-500 focus-within:ring-green-500"
+              : "border border-purple-500/50 focus-within:border-purple-500 focus-within:ring-purple-500"
+            : replyTo
+              ? "border border-blue-500/50 focus-within:border-blue-500 focus-within:ring-blue-500"
+              : "focus-within:border-blue-500 focus-within:ring-blue-500"
+            }`}
+        >
+          <div className="flex items-end">
+            <button
+              className="p-3 text-gray-400 hover:text-white transition-colors duration-200 flex-shrink-0 flex items-center justify-center"
+              onClick={() => {
+                /* Media Selection */
+              }}
+              disabled={disabled}
+            >
+              <FaPaperclip className="w-6 h-6" />
+            </button>
+
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={handleInputChange}
+              onKeyPress={handleKeyPress}
+              placeholder={isThreadMode ? "Thread content..." : placeholder}
+              disabled={disabled}
+              rows={1}
+              className={`flex-1 bg-transparent text-white py-3 px-1 resize-none focus:outline-none placeholder-gray-400 min-h-[24px] max-h-[120px] overflow-y-auto ${disabled ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              maxLength={500}
+            />
+
+            <button
+              onClick={handleSend}
+              disabled={!text.trim() || disabled}
+              className={`p-3 transition-all duration-200 flex-shrink-0 bg-[#373737] rounded-full mr-2 flex items-center justify-center ${text.trim() && !disabled
+                ? isThreadMode
+                  ? freeThreadsRemaining > 0
+                    ? "text-green-500 hover:text-green-400 transform hover:scale-105 active:scale-95"
+                    : "text-purple-500 hover:text-purple-400 transform hover:scale-105 active:scale-95"
+                  : replyTo
+                    ? "text-blue-500 hover:text-blue-400 transform hover:scale-105 active:scale-95"
+                    : "text-blue-500 hover:text-blue-400 transform hover:scale-105 active:scale-95"
+                : "text-gray-500 cursor-not-allowed"
+                }`}
+            >
+              <HiPaperAirplane
+                className={`w-5 h-5 ${isTyping ? "transform rotate-45" : ""
+                  } transition-transform duration-200`}
+              />
+            </button>
+          </div>
         </div>
 
-        <style>{`
+        {/* Command hint with full width */}
+        {text === "/thread" && (
+          <div className="mt-2 text-xs text-gray-400">
+            <span className="bg-gray-800 px-2 py-1 rounded">
+              Type "/thread your message" to create a thread
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* First-time Refill Prompt Modal */}
+      <RefillPromptModal
+        isOpen={showRefillPrompt}
+        onClose={() => setShowRefillPrompt(false)}
+      />
+
+      {/* Standard Insufficient Points Modal */}
+      <InsufficientPointsModal
+        isOpen={showInsufficientPointsModal}
+        onClose={() => setShowInsufficientPointsModal(false)}
+      />
+      <style>{`
           textarea::-webkit-scrollbar {
             width: 4px;
           }
@@ -673,20 +678,7 @@ function InputBox({
             -webkit-line-clamp: 2;
           }
         `}</style>
-      </div>
-
-      {/* First-time Refill Prompt Modal */}
-      <RefillPromptModal
-        isOpen={showRefillPrompt}
-        onClose={() => setShowRefillPrompt(false)}
-      />
-
-      {/* Standard Insufficient Points Modal */}
-      <InsufficientPointsModal
-        isOpen={showInsufficientPointsModal}
-        onClose={() => setShowInsufficientPointsModal(false)}
-      />
-    </>
+    </div >
   );
 }
 
