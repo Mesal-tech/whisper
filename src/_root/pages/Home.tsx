@@ -68,7 +68,7 @@ function Home() {
         <div className="text-center group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 h-full hover:border-white/20 hover:bg-white/10 transition-all duration-500 overflow-hidden">
           {/* Background gradient */}
           <motion.div
-            className={`absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 opacity-3 blur-xl -z-10`}
+            className={`absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 transform-gpu will-change-transform transition opacity-3 blur-xl -z-10`}
             animate={{
               scale: [1, 1.02, 1],
               opacity: [0.03, 0.05, 0.03]

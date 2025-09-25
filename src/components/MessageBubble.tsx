@@ -330,7 +330,7 @@ function MessageBubble({
           >
             {/* Background gradient */}
             <motion.div
-              className={`absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 opacity-3 blur-xl -z-10`}
+              className={`absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 transform-gpu will-change-transform transition opacity-3 blur-xl -z-10`}
               animate={{
                 scale: [1, 1.02, 1],
                 opacity: [0.03, 0.05, 0.03]
@@ -395,7 +395,7 @@ function MessageBubble({
                 <div className="flex justify-end mt-2">
                   <button
                     onClick={() => onThreadReply?.(message)}
-                    className="text-xs bg-purple-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors shadow-sm"
+                    className="text-xs bg-purple-500 text-white px-4 py-2 rounded-full hover:bg-purple-600 transition-colors shadow-sm"
                   >
                     Join Discussion
                   </button>
@@ -447,15 +447,13 @@ function MessageBubble({
           </motion.div>
 
           <div
-            className={`p-3 select-none shadow-sm transition-all duration-200 hover:shadow-md ${getBorderRadius()} ${isSending
-              ? "bg-gray-600 text-white"
-              : isCurrentUser
+            className={`rounded-[25px] p-3 select-none shadow-sm transition-all duration-200 hover:shadow-md ${getBorderRadius()} ${isCurrentUser
                 ? isHighlighted
                   ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-                  : "bg-blue-500 text-white"
+                  : "bg-gradient-to-br from-purple-600 via-purple-500 to-purple-400 text-white"
                 : isHighlighted
                   ? "bg-gray-700 text-white shadow-lg shadow-gray-500/20"
-                  : "bg-gray-800 text-white"
+                  : "bg-white/10 text-white"
               }`}
           >
             <div className="flex flex-col">

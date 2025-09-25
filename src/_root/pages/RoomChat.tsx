@@ -440,7 +440,7 @@ function RoomChat() {
 
       {/* LOCKED HEADER */}
       {!showJoinScreen && (
-        <div className="h-16 absolute top-0 left-0 right-0 flex items-center px-4 border-b border-gray-800/50 z-50 backdrop-blur-md bg-[#111111]/90 shadow-sm">
+        <div className="h-16 sticky top-0 left-0 right-0 flex items-center px-4 border-b border-gray-800/50 z-50 backdrop-blur-md bg-[#111111]/90 shadow-sm">
           <motion.button
             onClick={() => navigate("/rooms")}
             className="p-2 rounded-full hover:bg-gray-800/50 transition-all duration-200 mr-3"
@@ -479,7 +479,7 @@ function RoomChat() {
         <div
           ref={messagesContainerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto overflow-x-hidden pt-16 pb-24 bg-[#0a0a0a]"
+          className="messages-container flex-1 overflow-y-auto overflow-x-hidden pb-24 bg-[#0a0a0a]"
         >
           <div className="p-4 min-h-full">
             {messages.length === 0 ? (
