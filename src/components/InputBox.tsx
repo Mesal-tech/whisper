@@ -322,7 +322,7 @@ function InputBox({
   }, []);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-[#111111] z-50">
+    <div className="absolute bottom-0 left-0 right-0 bg-[#111111] z-50">
       <div className="max-w-screen-xl mx-auto p-2">
         {/* Enhanced Reply Preview */}
         {replyTo && (

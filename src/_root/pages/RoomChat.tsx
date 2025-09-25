@@ -362,7 +362,7 @@ function RoomChat() {
   const memberCount = room.members?.length || 0;
 
   return (
-    <div className="bg-[#111111] h-screen text-white flex flex-col overflow-hidden relative">
+    <div className="h-screen text-white flex flex-col overflow-hidden relative">
       {/* JOIN GROUP SCREEN */}
       {showJoinScreen && (
         <motion.div
@@ -415,7 +415,7 @@ function RoomChat() {
 
       {/* LOCKED HEADER - Fixed Position */}
       {!showJoinScreen && (
-        <div className="fixed top-0 left-0 right-0 flex items-center p-4 border-b border-gray-800 z-50 backdrop-blur-md bg-[#111111]/95">
+        <div className="h-[4rem] absolute top-0 left-0 right-0 flex items-center p-4 border-b border-gray-800 z-50 backdrop-blur-md bg-[#111111]/95">
           <button
             onClick={() => navigate("/rooms")}
             className="text-gray-400 hover:text-white mr-4 transition-colors duration-200 px-2 bg-[#373737] py-2 rounded-full"

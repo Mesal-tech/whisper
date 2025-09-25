@@ -10,27 +10,26 @@ import AnonMessage from "./_root/pages/AnonMessage";
 
 function App() {
   return (
-    <div className="min-h-screen bg-[#111111]">
-      <Router>
-        <Routes>
-          {/* Auth routes */}
-          <Route path="/auth" element={<AuthLayout />}>
-            <Route path="signin" element={<Signin />} />
-          </Route>
+    <Router>
+      <Routes>
+        {/* Auth routes */}
+        <Route path="/auth" element={<AuthLayout />}>
+          <Route path="signin" element={<Signin />} />
+        </Route>
 
-          {/* Main app routes with tabs */}
-          <Route element={<RootLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/rooms" element={<Rooms />} />
+        {/* Main app routes with tabs */}
+        <Route element={<RootLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/rooms" element={<Rooms />}>
             <Route path="/rooms/:id" element={<RoomChat />} />
-            <Route path="/messages" element={<Messages />} />
           </Route>
+          <Route path="/messages" element={<Messages />} />
+        </Route>
 
-          {/* Anonymous message route (accessible without auth) */}
-          <Route path="/anon/:id" element={<AnonMessage />} />
-        </Routes>
-      </Router>
-    </div>
+        {/* Anonymous message route (accessible without auth) */}
+        <Route path="/anon/:id" element={<AnonMessage />} />
+      </Routes>
+    </Router>
   );
 }
 

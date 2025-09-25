@@ -6,11 +6,13 @@ import {
 } from "../../store/userStore"; // Adjust path as needed
 import { useEffect } from "react";
 import { IoCopy } from "react-icons/io5";
+import { motion } from "framer-motion";
 
 function Home() {
   const userName = useUsername();
   const userId = useUserStore((state) => state.user?.id);
   const avatar = useUserAvatar();
+  const totalPoints = useUserStore((state) => state.user?.totalPoints || 0);
   const fetchUser = useUserStore((state) => state.fetchUser);
 
   useEffect(() => {
@@ -58,10 +60,25 @@ function Home() {
   };
 
   return (
-    <div className="h-screen bg-[#111111]">
+    <div className="w-full flex flex-col items-center justify-center h-screen">
       <Header />
-      <main className="max-w-7xl mx-auto px-4 mt-20 sm:px-6 lg:px-8 py-8 flex items-center justify-center w-full">
-        <div className="bg-[#1F1F22] rounded-2xl shadow p-6 w-full max-w-md text-center">
+
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        {/* Profile card */}
+        <div className="text-center group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 h-full hover:border-white/20 hover:bg-white/10 transition-all duration-500 overflow-hidden">
+          {/* Background gradient */}
+          <motion.div
+            className={`absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 opacity-3 blur-xl -z-10`}
+            animate={{
+              scale: [1, 1.02, 1],
+              opacity: [0.03, 0.05, 0.03]
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity
+            }}
+          />
+
           <div className="flex justify-center mb-4">
             <div className="relative">
               {/* Gradient background behind image - perfectly sized */}
@@ -78,8 +95,12 @@ function Home() {
             {userName || "Anonymous"}
           </h2>
 
+          <p className="text-xl text-purple-300 mb-4">
+            Total Points: {totalPoints}
+          </p>
+
           {/* URL with copy button */}
-          <div className="bg-[#2A2A2D] rounded-xl p-3 mb-4 flex items-center justify-between">
+          <div className="flex items-center text-center p-2 my-2 bg-white/5 rounded-xl border border-white/10 group-hover:bg-white/10 transition-colors">
             <p className="text-gray-300 text-sm flex-1 mr-2 truncate">
               {profileUrl}
             </p>

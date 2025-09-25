@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { FiPlus } from "react-icons/fi";
+import { useState, useEffect, ChangeEvent } from "react";
+import { useNavigate, Outlet, useParams } from "react-router-dom";
+import { FiPlus, FiX, FiCamera } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "../../store/authStore";
 import { useRoomStore } from "../../store/roomStore";
@@ -9,15 +9,15 @@ import emptyRoomImage from "/assets/images/empty-folder.png";
 import bgImage from "/assets/images/shh.jpeg";
 
 const EmptyRooms = () => (
-  <div className="flex flex-col items-center justify-center h-full mt-20">
+  <div className="flex flex-col items-center justify-center h-full">
     <img
       src={emptyRoomImage}
       alt="No rooms found"
-      className="w-50 h-50 mb-6 opacity-70"
+      className="w-40 h-40 mb-6 opacity-70"
     />
-    <h3 className="text-xl font-medium mb-2">No rooms Found</h3>
-    <p className="text-sm text-center max-w-xs">
-      Create your first room to start chatting with others
+    <h3 className="text-xl font-medium mb-2">No Rooms Found</h3>
+    <p className="text-sm text-center max-w-xs text-gray-300">
+      Start by creating your first room to connect and chat with like-minded people.
     </p>
   </div>
 );
@@ -38,23 +38,24 @@ function timeAgo(date: Date): string {
 }
 
 const RoomItem = ({ room, onClick }: { room: Room; onClick: () => void }) => (
-  <div
-    className="flex items-center p-4 hover:bg-gray-800 cursor-pointer transition-colors duration-150"
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.3 }}
+    className="flex items-center p-4 hover:bg-gray-800/50 cursor-pointer transition-colors duration-200 rounded-lg mx-2 my-1 shadow-sm hover:shadow-md"
     onClick={onClick}
   >
     {/* Avatar */}
     <div
-      className="w-14 h-14 rounded-full flex items-center justify-center text-white font-semibold text-xl mr-3 bg-cover bg-center"
-      style={{ backgroundImage: `url(${bgImage})` }}
-    >
-      {/* {room.avatar} */}
-    </div>
+      className="w-14 h-14 rounded-full flex items-center justify-center text-white font-semibold text-xl mr-4 bg-cover bg-center shrink-0 ring-1 ring-gray-700"
+      style={{ backgroundImage: `url(${room.avatar || bgImage})` }}
+    ></div>
 
     {/* Room Info */}
     <div className="flex-1 min-w-0">
       <div className="flex items-center justify-between mb-1">
         <h3 className="text-white font-medium truncate text-xl">{room.name}</h3>
-        <span className="text-gray-400 text-md">
+        <span className="text-gray-400 text-md ml-2 shrink-0">
           {room.timestamp && room.timestamp.toDate
             ? timeAgo(room.timestamp.toDate())
             : "Just now"}
@@ -64,7 +65,7 @@ const RoomItem = ({ room, onClick }: { room: Room; onClick: () => void }) => (
         {room.lastMessage || "No messages yet"}
       </p>
     </div>
-  </div>
+  </motion.div>
 );
 
 function Rooms() {
@@ -72,6 +73,11 @@ function Rooms() {
   const [showModal, setShowModal] = useState(false);
   const [roomName, setRoomName] = useState("");
   const [roomBio, setRoomBio] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  const { id } = useParams();
 
   // Store hooks
   const { user } = useAuthStore();
@@ -86,6 +92,15 @@ function Rooms() {
   } = useRoomStore();
 
   const hasRooms = rooms.length > 0;
+
+  // Handle window resize to toggle modal/drawer
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -109,20 +124,42 @@ function Rooms() {
     }
   }, [user, clearRooms]);
 
+  const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleCreateRoom = async () => {
     if (!roomName || !roomBio || !user) return;
+
+    let avatarUrl: string | undefined = undefined;
+
+    // Assuming Firebase Storage integration
+    // You need to import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+    // const storage = getStorage();
+    // if (avatarFile) {
+    //   const storageRef = ref(storage, `room_avatars/${user.uid}/${Date.now()}_${avatarFile.name}`);
+    //   await uploadBytes(storageRef, avatarFile);
+    //   avatarUrl = await getDownloadURL(storageRef);
+    // }
 
     try {
       await createRoom({
         name: roomName,
         bio: roomBio,
         creatorId: user.uid,
+        avatar: avatarUrl, // Pass avatar if uploaded
       });
 
       // Reset form and close modal
       setShowModal(false);
       setRoomName("");
       setRoomBio("");
+      setAvatarPreview(null);
+      setAvatarFile(null);
     } catch (error) {
       console.error("Error creating room:", error);
       // Error is already handled in the store
@@ -133,56 +170,73 @@ function Rooms() {
     setShowModal(false);
     setRoomName("");
     setRoomBio("");
+    setAvatarPreview(null);
+    setAvatarFile(null);
   };
 
   return (
-    <div className="bg-[#111111] min-h-screen text-white">
-      {/* Header */}
-      <div className="bg-[#111111] flex items-center justify-between p-4 border-b border-gray-800">
-        <div className="flex items-center">
-          <h1 className="text-3xl font-semibold">Rooms</h1>
-        </div>
-        <button
-          className="text-gray-400 hover:text-white transition-colors"
-          onClick={() => setShowModal(true)}
-        >
-          <FiPlus size={24} />
-        </button>
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-900/20 border border-red-500/30 text-red-300 p-3 m-4 rounded">
-          {error}
-        </div>
-      )}
-
+    <div className="h-screen text-white flex flex-col">
       {/* Content */}
-      <div className="flex-1">
+      <div className="flex-1 overflow-y-auto h-full">
         {isLoading && rooms.length === 0 ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
           </div>
         ) : hasRooms ? (
-          <div className="divide-y divide-gray-800">
-            {rooms.map((room) => (
-              <RoomItem
-                key={room.id}
-                room={room}
-                onClick={() => navigate(`/rooms/${room.id}`)}
-              />
-            ))}
+          <div className="flex w-full h-full">
+            {/* Rooms list */}
+            <div className="md:max-w-[20rem] w-full">
+              {/* Header */}
+              <div className="h-[4rem] bg-[#111111] flex items-center justify-between p-4 border-b border-gray-800 sticky top-0 z-10">
+                <div className="flex items-center">
+                  <h1 className="text-3xl font-semibold">Rooms</h1>
+                </div>
+                <button
+                  className="text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-gray-800"
+                  onClick={() => setShowModal(true)}
+                >
+                  <FiPlus size={24} />
+                </button>
+              </div>
+
+              {/* Error Display */}
+              {error && (
+                <div className="bg-red-900/20 border border-red-500/30 text-red-300 p-3 m-4 rounded-lg shadow-sm">
+                  {error}
+                </div>
+              )}
+
+              <div className="divide-y divide-gray-800">
+                {rooms.map((room) => (
+                  <RoomItem
+                    key={room.id}
+                    room={room}
+                    onClick={() => navigate(`/rooms/${room.id}`)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Message Box */}
+            <div className={`${id ? 'fixed md:static z-10 top-0 left-0' : 'hidden md:flex'} w-full bg-[#111111] md:bg-white/5 h-full`}>
+              {id ? (
+                <Outlet />
+              ) : (
+                <p>Select a conversation to start talking</p>
+              )}
+            </div>
           </div>
         ) : (
           <EmptyRooms />
         )}
       </div>
 
-      {/* Create Room Bottom Popup */}
+      {/* Create Room Popup (Modal on Desktop/Tablet, Draggable Drawer on Mobile) */}
       <AnimatePresence>
         {showModal && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-end justify-center"
+            className={`fixed inset-0 bg-black/40  z-[60] flex ${isMobile ? "items-end" : "items-center"
+              } justify-center backdrop-blur-sm`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -190,60 +244,106 @@ function Rooms() {
             onClick={closeModal}
           >
             <motion.div
-              className="bg-[#121212] w-full max-w-md rounded-t-4xl p-6"
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
+              className={`bg-black/50 backdrop-blur-sm border border-white/10 hover:border-white/20 hover:bg-black/10 transition-all duration-500 overflow-hidden w-full max-w-lg ${isMobile ? "rounded-t-3xl h-[40rem]" : "rounded-2xl"
+                } p-6 shadow-2xl ring-1 ring-gray-800/50 ${isMobile ? "touch-pan-y" : ""}`}
+              initial={isMobile ? { y: "100%" } : { scale: 0.95, opacity: 0 }}
+              animate={isMobile ? { y: 0 } : { scale: 1, opacity: 1 }}
+              exit={isMobile ? { y: "100%" } : { scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
+              drag={isMobile ? "y" : false}
+              dragConstraints={{ top: 50, bottom: 500 }}
+              dragElastic={0.2}
+              onDragEnd={(_event, info) => {
+                if (isMobile && info.offset.y > 200) {
+                  closeModal();
+                }
+              }}
             >
-              <h2 className="text-xl font-semibold mb-4">Create New Room</h2>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Name
+              {/* Background gradient */}
+              <motion.div
+                className={`absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 opacity-3 blur-xl -z-10`}
+                animate={{
+                  scale: [1, 1.02, 1],
+                  opacity: [0.03, 0.05, 0.03]
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity
+                }}
+              />
+
+              {isMobile && (
+                <div className="w-16 h-1 bg-gray-600 rounded-full mx-auto mb-6 opacity-80"></div>
+              )}
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-white">Create New Room</h2>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-gray-800/50 transition-all duration-200 disabled:opacity-50"
+                  disabled={isLoading}
+                >
+                  <FiX size={24} />
+                </button>
+              </div>
+              {/* Avatar Upload */}
+              <div className="mb-6 flex justify-center">
+                <div className="relative">
+                  <div
+                    className="w-24 h-24 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden ring-2 ring-gray-700 hover:ring-purple-500 transition-all duration-200 cursor-pointer group"
+                    style={{
+                      backgroundImage: `url(${avatarPreview || bgImage})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
+                    onClick={() => document.getElementById('avatar-upload')?.click()}
+                  >
+                    {!avatarPreview && (
+                      <FiCamera size={32} className="text-gray-400 group-hover:text-purple-400 transition-colors duration-200" />
+                    )}
+                  </div>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-200 mb-2">
+                  Room Name
                 </label>
-                <p className="text-xs text-gray-400 mb-2">
-                  Choose a name that embodies your community's spirit!
-                </p>
                 <input
                   type="text"
                   value={roomName}
                   onChange={(e) => setRoomName(e.target.value)}
-                  placeholder="Room name"
-                  className="bg-gray-900 text-white p-2 rounded w-full"
+                  placeholder="Enter a catchy name"
+                  className="bg-white/5 rounded-xl border border-white/10 group-hover:bg-white/10 transition-colors p-3 w-full focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all duration-200 disabled:opacity-50 placeholder-gray-500"
                   disabled={isLoading}
                 />
               </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Bio
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-200 mb-2">
+                  Room Bio
                 </label>
-                <p className="text-xs text-gray-400 mb-2">
-                  Share the magic of your community! Describe its purpose and
-                  what makes it a welcoming, engaging space for its members.
-                </p>
                 <textarea
                   value={roomBio}
                   onChange={(e) => setRoomBio(e.target.value)}
-                  placeholder="Room bio"
-                  className="bg-gray-900 text-white p-2 rounded w-full h-24 resize-none"
+                  placeholder="Describe your room's vibe"
+                  className="bg-white/5 rounded-xl border border-white/10 group-hover:bg-white/10 transition-colors p-3 w-full h-32 resize-none border border-gray-700/50 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all duration-200 disabled:opacity-50 placeholder-gray-500"
                   disabled={isLoading}
                 />
               </div>
               <div className="flex justify-end">
                 <button
-                  onClick={closeModal}
-                  className="text-gray-400 hover:text-white mr-4"
-                  disabled={isLoading}
-                >
-                  Cancel
-                </button>
-                <button
                   onClick={handleCreateRoom}
                   disabled={!roomName || !roomBio || isLoading}
-                  className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-blue-300 disabled:cursor-not-allowed"
+                  className="w-full rounded-full bg-purple-600 text-white px-6 py-3 disabled:bg-purple-400 disabled:cursor-not-allowed hover:bg-purple-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg"
                 >
-                  {isLoading ? "Creating..." : "Create"}
+                  {isLoading ? "Creating..." : "Create Room"}
                 </button>
               </div>
             </motion.div>
