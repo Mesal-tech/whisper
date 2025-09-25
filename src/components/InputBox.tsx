@@ -494,7 +494,7 @@ function InputBox({
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 bg-[#111111] z-50">
+    <div className="fixed md:absolute bottom-0 left-0 right-0 bg-[#111111] z-50">
       <div className="max-w-screen-xl mx-auto p-2">
         {/* Enhanced Reply Preview */}
         {replyTo && (
