@@ -449,7 +449,7 @@ function MessageBubble({
           <div
             className={`rounded-[25px] p-3 select-none shadow-sm transition-all duration-200 hover:shadow-md ${getBorderRadius()} ${isCurrentUser
                 ? isHighlighted
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                  ? "bg-purple-500/90 border border-white/10 group-hover:bg-purple-500/10 transition-colors text-white shadow-lg shadow-white-500/20"
                   : "bg-gradient-to-br from-purple-600 via-purple-500 to-purple-400 text-white"
                 : isHighlighted
                   ? "bg-gray-700 text-white shadow-lg shadow-gray-500/20"
@@ -468,7 +468,7 @@ function MessageBubble({
               {repliedToMessage && (
                 <div
                   className={`mb-2 p-2 rounded border-l-2 cursor-pointer transition-all duration-200 ${isCurrentUser
-                    ? "bg-blue-600/30 border-blue-300 hover:bg-blue-600/40"
+                    ? "bg-gray-600/30 border-white hover:bg-gray-600/40"
                     : "bg-gray-700/50 border-gray-400 hover:bg-gray-700/70"
                     }`}
                   onClick={handleReplyClick}

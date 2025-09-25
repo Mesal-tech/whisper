@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { HiPaperAirplane, HiReply, HiX, HiExternalLink } from "react-icons/hi";
-import { FaPaperclip } from "react-icons/fa";
+import { GiWool } from "react-icons/gi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -598,7 +598,7 @@ function InputBox({
               }}
               disabled={disabled}
             >
-              <FaPaperclip className="w-6 h-6" />
+              <GiWool className="w-6 h-6" />
             </button>
 
             <textarea
