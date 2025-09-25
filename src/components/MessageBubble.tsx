@@ -5,7 +5,7 @@ import {
   useTransform,
   AnimatePresence,
 } from "framer-motion";
-import { HiReply, HiTrash, HiClipboardCopy, HiChatAlt2 } from "react-icons/hi";
+import { HiReply, HiTrash, HiClipboardCopy } from "react-icons/hi";
 import type { PanInfo } from "framer-motion";
 import type { Message } from "../types";
 
@@ -291,7 +291,7 @@ function MessageBubble({
 
   const getBorderRadius = () => {
     if (isThread) {
-      return "rounded-lg";
+      return "rounded-2xl";
     }
 
     if (isCurrentUser) {
@@ -321,75 +321,77 @@ function MessageBubble({
     return (
       <div className={`flex group relative select-none ${getMarginTop()}`}>
         <div className="w-full relative">
+          {/* Main Thread Bubble */}
           <div
-            className={`w-full border-l-4 border-purple-500 backdrop-blur-sm p-4 ${getBorderRadius()} transition-all duration-200 ${
+            className={`w-full p-4 shadow-sm transition-all duration-200 ${getBorderRadius()} ${
               isHighlighted
-                ? "bg-purple-500/30 shadow-lg shadow-purple-500/20"
-                : "bg-purple-500/10 hover:bg-purple-500/15"
+                ? "bg-blue-500 shadow-lg shadow-blue-500/20"
+                : "bg-blue-500"
             }`}
             onPointerDown={handleLongPressStart}
             onPointerUp={handleLongPressEnd}
             onPointerLeave={handleLongPressEnd}
           >
-            <div className="flex items-center gap-2 mb-3">
-              <HiChatAlt2 className="w-4 h-4 text-purple-400" />
-              <span className="text-xs font-medium text-purple-300">
-                Thread
-              </span>
-              <span className="text-xs text-gray-400">
-                by {message.userName || "Anonymous"}
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <span className="text-lg font-medium text-white">
+                What do you think?
               </span>
               {isSending && (
                 <div className="flex items-center gap-1 ml-auto">
-                  <span className="text-xs text-gray-400">Sending</span>
-                  <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse" />
+                  <span className="text-sm text-white/80">Sending</span>
+                  <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
                 </div>
               )}
             </div>
 
-            {repliedToMessage && (
-              <div
-                className="mb-3 p-2 bg-purple-500/20 border border-purple-500/30 rounded cursor-pointer hover:bg-purple-500/30 transition-colors"
-                onClick={handleReplyClick}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <HiReply className="w-3 h-3 text-purple-400" />
-                  <span className="text-xs text-purple-300">
-                    Replying to {repliedToMessage.userName || "Anonymous"}
-                    {repliedToMessage.messageType === "thread" && " (Thread)"}
-                  </span>
+            {/* Nested Message */}
+            <div className="bg-gray-800 rounded-xl p-3">
+              {repliedToMessage && (
+                <div
+                  className="mb-3 p-2 bg-gray-700/50 border border-gray-600/30 rounded cursor-pointer hover:bg-gray-700/70 transition-colors"
+                  onClick={handleReplyClick}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <HiReply className="w-3 h-3 text-white" />
+                    <span className="text-xs text-white">
+                      Replying to {repliedToMessage.userName || "Anonymous"}
+                      {repliedToMessage.messageType === "thread" && " (Thread)"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-white/90 truncate">
+                    {repliedToMessage.text.length > 60
+                      ? `${repliedToMessage.text.substring(0, 60)}...`
+                      : repliedToMessage.text}
+                  </p>
                 </div>
-                <p className="text-xs text-gray-300 truncate">
-                  {repliedToMessage.text.length > 60
-                    ? `${repliedToMessage.text.substring(0, 60)}...`
-                    : repliedToMessage.text}
-                </p>
-              </div>
-            )}
+              )}
 
-            <div className="pl-2">
               <TextWithLinks
                 text={message.text}
-                className="text-sm leading-relaxed break-words whitespace-pre-wrap text-gray-100"
+                className="text-sm leading-relaxed break-words whitespace-pre-wrap text-white"
               />
             </div>
 
             {showTimestamp && message.timestamp && (
-              <div className="flex items-center justify-between mt-3 pt-2 border-t border-purple-500/20">
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <span>{formatTime(message.timestamp)}</span>
-                  <span>•</span>
-                  <span>Thread</span>
-                </div>
-                <button
-                  onClick={() => onThreadReply?.(message)}
-                  className="text-xs bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full border border-purple-500/30 hover:bg-purple-500/30 transition-colors"
-                >
-                  Reply
-                </button>
+              <div className="flex items-center mt-3 text-xs text-white/80">
+                <span>{formatTime(message.timestamp)}</span>
+                <span className="mx-2">•</span>
+                <span>Thread</span>
               </div>
             )}
           </div>
+
+          {/* Reply Button - Outside and Bottom Right */}
+          {onThreadReply && (
+            <div className="flex justify-end mt-2">
+              <button
+                onClick={() => onThreadReply?.(message)}
+                className="text-xs bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors shadow-sm"
+              >
+                Reply
+              </button>
+            </div>
+          )}
         </div>
 
         <BottomSheet

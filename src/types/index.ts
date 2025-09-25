@@ -7,6 +7,9 @@ export interface User {
   createdAt: Timestamp;
   avatar?: string;
   bio?: string;
+  points: string;
+  freeThreadsRemaining: number;
+  hasSeenRefillPrompt: boolean;
 }
 
 export interface AnonymousMessage {
