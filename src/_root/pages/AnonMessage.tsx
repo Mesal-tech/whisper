@@ -1,24 +1,24 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { doc, collection, addDoc, getDoc } from "firebase/firestore";
-import { db } from "../../lib/firebase"; // Adjust path to your Firebase config
+import { db } from "../../lib/firebase";
 import { Timestamp } from "firebase/firestore";
 
 const AnonMessage = () => {
-  const { id } = useParams<{ id: string }>(); // Get userId from route
+  const { id } = useParams<{ id: string }>();
   const [text, setText] = useState("");
-  const [userName, setUserName] = useState("Anonymous");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [sending, setSending] = useState(false);
 
-  // Fetch user data to display their name
+  // Fetch user data to verify user exists
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const userDoc = await getDoc(doc(db, "users", id!));
-        if (userDoc.exists()) {
-          setUserName(userDoc.data().userName || "Anonymous");
+        if (!userDoc.exists()) {
+          setError("User not found");
         }
         setLoading(false);
       } catch (err) {
@@ -38,6 +38,7 @@ const AnonMessage = () => {
     }
 
     try {
+      setSending(true);
       setError(null);
       setSuccess(false);
       await addDoc(collection(db, `users/${id}/messages`), {
@@ -50,6 +51,8 @@ const AnonMessage = () => {
       setText("");
     } catch (err) {
       setError("Failed to send message");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -65,7 +68,7 @@ const AnonMessage = () => {
     <div className="min-h-screen bg-[#111111] flex items-center justify-center p-4">
       <div className="bg-[#121212] border border-gray-700 rounded-lg shadow-lg p-6 w-full max-w-md">
         <h2 className="text-xl font-semibold text-gray-200 mb-4">
-          Send an Anonymous Message to {userName}
+          Send Message to Anonymous
         </h2>
         <form onSubmit={handleSubmit}>
           <textarea
@@ -81,9 +84,21 @@ const AnonMessage = () => {
           )}
           <button
             type="submit"
-            className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 rounded transition-all duration-200"
+            disabled={sending}
+            className={`mt-4 w-full font-medium py-2 rounded transition-all duration-200 flex items-center justify-center ${
+              sending
+                ? "bg-blue-400 cursor-not-allowed text-white"
+                : "bg-blue-500 hover:bg-blue-600 text-white"
+            }`}
           >
-            Send Message
+            {sending ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Sending...
+              </>
+            ) : (
+              "Send Message"
+            )}
           </button>
         </form>
       </div>
