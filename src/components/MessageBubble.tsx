@@ -182,7 +182,7 @@ function MessageBubble({
   const isDragging = useRef(false);
 
   // Transform drag value to opacity for reply icon - only for regular messages
-  const replyIconOpacity = useTransform(dragX, [0, 40, 80], [0, 0.7, 1]);
+  const replyIconOpacity = useTransform(dragX, [-80, -40, 0], [1, 0.7, 0]);
 
   // Find the message being replied to
   const repliedToMessage = message.replyTo
@@ -221,8 +221,8 @@ function MessageBubble({
     const threshold = 80;
     const dragValue = info.offset.x;
 
-    if (dragValue > 0) {
-      dragX.set(Math.min(dragValue, threshold));
+    if (dragValue < 0) {
+      dragX.set(Math.max(dragValue, -threshold));
     } else {
       dragX.set(0);
     }
@@ -238,7 +238,7 @@ function MessageBubble({
     const velocity = info.velocity.x;
     const dragValue = info.offset.x;
 
-    const shouldReply = dragValue > threshold || velocity > 500;
+    const shouldReply = dragValue < -threshold || velocity < -500;
 
     if (shouldReply && onReply) {
       onReply(message);
@@ -323,14 +323,23 @@ function MessageBubble({
         <div className="w-full relative">
           {/* Main Thread Bubble */}
           <div
-            className={`thread-bubble w-full mx-auto max-w-[30rem] p-4 shadow-sm transition-all duration-200 ${getBorderRadius()} bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-white/20 hover:bg-white/10 overflow-hidden`}
-            style={{ transform: "translateZ(0)" }}
+            className={`w-full mx-auto max-w-[30rem] p-4 shadow-sm transition-all duration-200 ${getBorderRadius()} bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-white/20 hover:bg-white/10 transition-all duration-500 overflow-hidden`}
             onPointerDown={handleLongPressStart}
             onPointerUp={handleLongPressEnd}
             onPointerLeave={handleLongPressEnd}
           >
             {/* Background gradient */}
-            <div className="gradient-bg absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 blur-xl -z-10" />
+            <motion.div
+              className={`absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 transform-gpu will-change-transform transition opacity-3 blur-xl -z-10`}
+              animate={{
+                scale: [1, 1.02, 1],
+                opacity: [0.03, 0.05, 0.03],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+              }}
+            />
 
             <div className="flex items-center justify-center gap-2 mb-3">
               <span className="text-lg font-medium text-white">
@@ -408,33 +417,37 @@ function MessageBubble({
   }
 
   return (
-    <div className={`group relative select-none ${getMarginTop()}`}>
-      <div className="absolute inset-0 flex items-center px-4 pointer-events-none z-0">
-        <motion.div
-          style={{ opacity: replyIconOpacity }}
-          className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center"
-        >
-          <HiReply className="w-4 h-4 text-white" />
-        </motion.div>
-      </div>
-
-      <motion.div
-        className={`relative z-10 flex ${
-          isCurrentUser ? "justify-end" : "justify-start"
+    <div
+      className={`flex group relative select-none ${getMarginTop()} ${
+        isCurrentUser ? "justify-end" : "justify-start"
+      }`}
+    >
+      <div
+        className={`max-w-[40vh] lg:max-w-md relative ${
+          isCurrentUser ? "ml-auto" : "mr-auto"
         }`}
-        style={{ x: dragX }}
-        drag="x"
-        dragConstraints={{ left: 0, right: 80 }}
-        dragElastic={0.1}
-        dragMomentum={false}
-        onDragStart={handleDragStart}
-        onDrag={handleDrag}
-        onDragEnd={handleDragEnd}
-        onPointerDown={handleLongPressStart}
-        onPointerUp={handleLongPressEnd}
-        onPointerLeave={handleLongPressEnd}
       >
-        <div className={`max-w-[40vh] lg:max-w-md relative`}>
+        <motion.div
+          drag="x"
+          dragConstraints={{ left: -100, right: 0 }}
+          dragElastic={0.1}
+          dragMomentum={false}
+          style={{ x: dragX }}
+          onDragStart={handleDragStart}
+          onDrag={handleDrag}
+          onDragEnd={handleDragEnd}
+          onPointerDown={handleLongPressStart}
+          onPointerUp={handleLongPressEnd}
+          onPointerLeave={handleLongPressEnd}
+          className="relative"
+        >
+          <motion.div
+            style={{ opacity: replyIconOpacity }}
+            className="absolute top-1/2 -translate-y-1/2 -left-12 w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center"
+          >
+            <HiReply className="w-4 h-4 text-white" />
+          </motion.div>
+
           <div
             className={`rounded-[25px] p-3 select-none shadow-sm transition-all duration-200 hover:shadow-md ${getBorderRadius()} ${
               isCurrentUser
@@ -487,39 +500,39 @@ function MessageBubble({
               />
             </div>
           </div>
+        </motion.div>
 
-          {isLastInTimeGroup && (
-            <div
-              className={`mt-1 text-xs text-gray-400 ${
-                isCurrentUser ? "text-right" : "text-left"
-              }`}
-            >
-              {isSending ? (
-                <div className="flex items-center gap-1 justify-end">
-                  <span>Sending</span>
-                  <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
-                </div>
-              ) : showTimestamp && message.timestamp ? (
-                <div
-                  className={`flex items-center gap-1 ${
-                    isCurrentUser ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <span className="text-[12px]">
-                    {formatTime(message.timestamp)}
-                  </span>
-                  {isCurrentUser && (
-                    <>
-                      <span> • </span>
-                      <span className="text-[12px]"> Sent</span>
-                    </>
-                  )}
-                </div>
-              ) : null}
-            </div>
-          )}
-        </div>
-      </motion.div>
+        {isLastInTimeGroup && (
+          <div
+            className={`mt-1 text-xs text-gray-400 ${
+              isCurrentUser ? "text-right" : "text-left"
+            }`}
+          >
+            {isSending ? (
+              <div className="flex items-center gap-1 justify-end">
+                <span>Sending</span>
+                <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
+              </div>
+            ) : showTimestamp && message.timestamp ? (
+              <div
+                className={`flex items-center gap-1 ${
+                  isCurrentUser ? "justify-end" : "justify-start"
+                }`}
+              >
+                <span className="text-[12px]">
+                  {formatTime(message.timestamp)}
+                </span>
+                {isCurrentUser && (
+                  <>
+                    <span> • </span>
+                    <span className="text-[12px]"> Sent</span>
+                  </>
+                )}
+              </div>
+            ) : null}
+          </div>
+        )}
+      </div>
 
       <BottomSheet
         isOpen={showBottomSheet}
