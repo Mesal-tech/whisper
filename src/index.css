@@ -7,3 +7,39 @@ body {
 /* body {
   font-family: "Jost";
 } */
+/* Thread bubble optimizations */
+.thread-bubble {
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.thread-bubble .gradient-bg {
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+/* Ensure nested message animations are GPU-accelerated */
+.thread-bubble .nested-message {
+  will-change: opacity;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Optimize hover transitions */
+.thread-bubble:hover {
+  transition: all 0.2s ease-out;
+}
+
+/* Optimize reply button animations */
+.thread-bubble .reply-button {
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+}
+
+/* General performance optimizations */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
