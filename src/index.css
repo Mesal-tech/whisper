@@ -7,39 +7,36 @@ body {
 /* body {
   font-family: "Jost";
 } */
-/* Thread bubble optimizations */
+
 .thread-bubble {
-  will-change: transform, opacity;
-  transform: translate3d(0, 0, 0);
+  transform: translateZ(0); /* Forces GPU layer without will-change overuse */
   backface-visibility: hidden;
-  perspective: 1000px;
-}
-
-.thread-bubble .gradient-bg {
-  will-change: transform, opacity;
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
-}
-
-/* Ensure nested message animations are GPU-accelerated */
-.thread-bubble .nested-message {
-  will-change: opacity;
-  transform: translate3d(0, 0, 0);
-}
-
-/* Optimize hover transitions */
-.thread-bubble:hover {
-  transition: all 0.2s ease-out;
-}
-
-/* Optimize reply button animations */
-.thread-bubble .reply-button {
-  will-change: transform, opacity;
-  transform: translate3d(0, 0, 0);
-}
-
-/* General performance optimizations */
-* {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* GPU-accelerated infinite keyframes for gradient - No JS lag */
+@keyframes gradientPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.03;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 0.05;
+  }
+}
+
+.gradient-bg {
+  animation: gradientPulse 3s ease-in-out infinite;
+  transform: translateZ(0);
+}
+
+/* Fallback for reduced motion (respects user prefs) */
+@media (prefers-reduced-motion: reduce) {
+  .gradient-bg {
+    animation: none;
+    opacity: 0.03;
+  }
 }

@@ -330,17 +330,7 @@ function MessageBubble({
             onPointerLeave={handleLongPressEnd}
           >
             {/* Background gradient */}
-            <motion.div
-              className={`gradient-bg absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 transform-gpu will-change-transform transition opacity-3 blur-xl -z-10`}
-              animate={{
-                scale: [1, 1.02, 1],
-                opacity: [0.03, 0.05, 0.03],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-              }}
-            />
+            <div className="gradient-bg absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 blur-xl -z-10" />
 
             <div className="flex items-center justify-center gap-2 mb-3">
               <span className="text-lg font-medium text-white">
