@@ -4,18 +4,15 @@ body {
   font-family: "Caveat Brush";
 }
 
-/* body {
-  font-family: "Jost";
-} */
-
+/* Thread bubble optimizations */
 .thread-bubble {
-  transform: translateZ(0); /* Forces GPU layer without will-change overuse */
+  transform: translateZ(0); /* Forces GPU layer for performance */
   backface-visibility: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* GPU-accelerated infinite keyframes for gradient - No JS lag */
+/* GPU-accelerated infinite keyframes for gradient */
 @keyframes gradientPulse {
   0%,
   100% {
@@ -28,12 +25,23 @@ body {
   }
 }
 
-.gradient-bg {
-  animation: gradientPulse 3s ease-in-out infinite;
-  transform: translateZ(0);
+/* Apply animation only on larger screens (tablets/PCs) */
+@media (min-width: 768px) {
+  .gradient-bg {
+    animation: gradientPulse 3s ease-in-out infinite;
+    transform: translateZ(0);
+  }
 }
 
-/* Fallback for reduced motion (respects user prefs) */
+/* Mobile: Static fallback, no animation */
+@media (max-width: 767px) {
+  .gradient-bg {
+    transform: translateZ(0);
+    opacity: 0.03; /* Matches initial animation state */
+  }
+}
+
+/* Respect user's reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   .gradient-bg {
     animation: none;

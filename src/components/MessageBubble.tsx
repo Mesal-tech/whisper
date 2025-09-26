@@ -324,7 +324,7 @@ function MessageBubble({
           {/* Main Thread Bubble */}
           <div
             className={`thread-bubble w-full mx-auto max-w-[30rem] p-4 shadow-sm transition-all duration-200 ${getBorderRadius()} bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-white/20 hover:bg-white/10 overflow-hidden`}
-            style={{ transform: "translate3d(0, 0, 0)" }}
+            style={{ transform: "translateZ(0)" }}
             onPointerDown={handleLongPressStart}
             onPointerUp={handleLongPressEnd}
             onPointerLeave={handleLongPressEnd}
@@ -345,7 +345,7 @@ function MessageBubble({
             </div>
 
             {/* Nested Message */}
-            <div className="nested-message bg-white/5 text-center rounded-xl border border-white/10 group-hover:bg-white/10 transition-colors p-3">
+            <div className="bg-white/5 text-center rounded-xl border border-white/10 group-hover:bg-white/10 transition-colors p-3">
               {repliedToMessage && (
                 <div
                   className="mb-3 p-2 bg-gray-700/50 border border-gray-600/30 rounded cursor-pointer hover:bg-gray-700/70 transition-colors"
@@ -386,7 +386,7 @@ function MessageBubble({
                 <div className="flex justify-end mt-2">
                   <button
                     onClick={() => onThreadReply?.(message)}
-                    className="reply-button text-xs bg-purple-500 text-white px-4 py-2 rounded-full hover:bg-purple-600 transition-colors shadow-sm"
+                    className="text-xs bg-purple-500 text-white px-4 py-2 rounded-full hover:bg-purple-600 transition-colors shadow-sm"
                   >
                     Join Discussion
                   </button>
