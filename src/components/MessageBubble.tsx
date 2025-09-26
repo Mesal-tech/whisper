@@ -182,7 +182,7 @@ function MessageBubble({
   const isDragging = useRef(false);
 
   // Transform drag value to opacity for reply icon - only for regular messages
-  const replyIconOpacity = useTransform(dragX, [-80, -40, 0], [1, 0.7, 0]);
+  const replyIconOpacity = useTransform(dragX, [0, 40, 80], [0, 0.7, 1]);
 
   // Find the message being replied to
   const repliedToMessage = message.replyTo
@@ -221,8 +221,8 @@ function MessageBubble({
     const threshold = 80;
     const dragValue = info.offset.x;
 
-    if (dragValue < 0) {
-      dragX.set(Math.max(dragValue, -threshold));
+    if (dragValue > 0) {
+      dragX.set(Math.min(dragValue, threshold));
     } else {
       dragX.set(0);
     }
@@ -238,7 +238,7 @@ function MessageBubble({
     const velocity = info.velocity.x;
     const dragValue = info.offset.x;
 
-    const shouldReply = dragValue < -threshold || velocity < -500;
+    const shouldReply = dragValue > threshold || velocity > 500;
 
     if (shouldReply && onReply) {
       onReply(message);
@@ -324,6 +324,7 @@ function MessageBubble({
           {/* Main Thread Bubble */}
           <div
             className={`w-full mx-auto max-w-[30rem] p-4 shadow-sm transition-all duration-200 ${getBorderRadius()} bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-white/20 hover:bg-white/10 transition-all duration-500 overflow-hidden`}
+            style={{ transform: "translate3d(0, 0, 0)" }}
             onPointerDown={handleLongPressStart}
             onPointerUp={handleLongPressEnd}
             onPointerLeave={handleLongPressEnd}
@@ -417,121 +418,120 @@ function MessageBubble({
   }
 
   return (
-    <div
-      className={`flex group relative select-none ${getMarginTop()} ${
-        isCurrentUser ? "justify-end" : "justify-start"
-      }`}
-    >
+    <div className={`group relative select-none ${getMarginTop()}`}>
+      <div className="absolute inset-0 flex items-center px-4 pointer-events-none z-0">
+        <motion.div
+          style={{ opacity: replyIconOpacity }}
+          className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center"
+        >
+          <HiReply className="w-4 h-4 text-white" />
+        </motion.div>
+      </div>
+
       <div
-        className={`max-w-[40vh] lg:max-w-md relative ${
-          isCurrentUser ? "ml-auto" : "mr-auto"
+        className={`relative z-10 flex ${
+          isCurrentUser ? "justify-end" : "justify-start"
         }`}
       >
-        <motion.div
-          drag="x"
-          dragConstraints={{ left: -100, right: 0 }}
-          dragElastic={0.1}
-          dragMomentum={false}
-          style={{ x: dragX }}
-          onDragStart={handleDragStart}
-          onDrag={handleDrag}
-          onDragEnd={handleDragEnd}
-          onPointerDown={handleLongPressStart}
-          onPointerUp={handleLongPressEnd}
-          onPointerLeave={handleLongPressEnd}
-          className="relative"
-        >
+        <div className="flex flex-col max-w-[40vh] lg:max-w-md relative">
           <motion.div
-            style={{ opacity: replyIconOpacity }}
-            className="absolute top-1/2 -translate-y-1/2 -left-12 w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center"
+            style={{ x: dragX }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 80 }}
+            dragElastic={0.1}
+            dragMomentum={false}
+            onDragStart={handleDragStart}
+            onDrag={handleDrag}
+            onDragEnd={handleDragEnd}
+            onPointerDown={handleLongPressStart}
+            onPointerUp={handleLongPressEnd}
+            onPointerLeave={handleLongPressEnd}
           >
-            <HiReply className="w-4 h-4 text-white" />
-          </motion.div>
-
-          <div
-            className={`rounded-[25px] p-3 select-none shadow-sm transition-all duration-200 hover:shadow-md ${getBorderRadius()} ${
-              isCurrentUser
-                ? isHighlighted
-                  ? "bg-purple-500/90 border border-white/10 group-hover:bg-purple-500/10 transition-colors text-white shadow-lg shadow-white-500/20"
-                  : "bg-gradient-to-br from-purple-600 via-purple-500 to-purple-400 text-white"
-                : isHighlighted
-                ? "bg-gray-700 text-white shadow-lg shadow-gray-500/20"
-                : "bg-white/10 text-white"
-            }`}
-          >
-            <div className="flex flex-col">
-              {isFirstInTimeGroup && !isCurrentUser && (
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <span className="text-xs opacity-70 font-medium">
-                    {message.userName || "Anonymous"}
-                  </span>
-                </div>
-              )}
-
-              {repliedToMessage && (
-                <div
-                  className={`mb-2 p-2 rounded border-l-2 cursor-pointer transition-all duration-200 ${
-                    isCurrentUser
-                      ? "bg-gray-600/30 border-white hover:bg-gray-600/40"
-                      : "bg-gray-700/50 border-gray-400 hover:bg-gray-700/70"
-                  }`}
-                  onClick={handleReplyClick}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <HiReply className="w-3 h-3 opacity-60" />
-                    <span className="text-xs opacity-70">
-                      Replying to {repliedToMessage.userName || "Anonymous"}
-                      {repliedToMessage.messageType === "thread" && (
-                        <span className="text-purple-300 ml-1">(Thread)</span>
-                      )}
+            <div
+              className={`rounded-[25px] p-3 select-none shadow-sm transition-all duration-200 hover:shadow-md ${getBorderRadius()} ${
+                isCurrentUser
+                  ? isHighlighted
+                    ? "bg-purple-500/90 border border-white/10 group-hover:bg-purple-500/10 transition-colors text-white shadow-lg shadow-white-500/20"
+                    : "bg-gradient-to-br from-purple-600 via-purple-500 to-purple-400 text-white"
+                  : isHighlighted
+                  ? "bg-gray-700 text-white shadow-lg shadow-gray-500/20"
+                  : "bg-white/10 text-white"
+              }`}
+            >
+              <div className="flex flex-col">
+                {isFirstInTimeGroup && !isCurrentUser && (
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <span className="text-xs opacity-70 font-medium">
+                      {message.userName || "Anonymous"}
                     </span>
                   </div>
-                  <p className="text-xs opacity-80 truncate">
-                    {repliedToMessage.text.length > 50
-                      ? `${repliedToMessage.text.substring(0, 50)}...`
-                      : repliedToMessage.text}
-                  </p>
-                </div>
-              )}
-
-              <TextWithLinks
-                text={message.text}
-                className="text-lg leading-relaxed break-words whitespace-pre-wrap"
-              />
-            </div>
-          </div>
-        </motion.div>
-
-        {isLastInTimeGroup && (
-          <div
-            className={`mt-1 text-xs text-gray-400 ${
-              isCurrentUser ? "text-right" : "text-left"
-            }`}
-          >
-            {isSending ? (
-              <div className="flex items-center gap-1 justify-end">
-                <span>Sending</span>
-                <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
-              </div>
-            ) : showTimestamp && message.timestamp ? (
-              <div
-                className={`flex items-center gap-1 ${
-                  isCurrentUser ? "justify-end" : "justify-start"
-                }`}
-              >
-                <span className="text-[12px]">
-                  {formatTime(message.timestamp)}
-                </span>
-                {isCurrentUser && (
-                  <>
-                    <span> • </span>
-                    <span className="text-[12px]"> Sent</span>
-                  </>
                 )}
+
+                {repliedToMessage && (
+                  <div
+                    className={`mb-2 p-2 rounded border-l-2 cursor-pointer transition-all duration-200 ${
+                      isCurrentUser
+                        ? "bg-gray-600/30 border-white hover:bg-gray-600/40"
+                        : "bg-gray-700/50 border-gray-400 hover:bg-gray-700/70"
+                    }`}
+                    onClick={handleReplyClick}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <HiReply className="w-3 h-3 opacity-60" />
+                      <span className="text-xs opacity-70">
+                        Replying to {repliedToMessage.userName || "Anonymous"}
+                        {repliedToMessage.messageType === "thread" && (
+                          <span className="text-purple-300 ml-1">(Thread)</span>
+                        )}
+                      </span>
+                    </div>
+                    <p className="text-xs opacity-80 truncate">
+                      {repliedToMessage.text.length > 50
+                        ? `${repliedToMessage.text.substring(0, 50)}...`
+                        : repliedToMessage.text}
+                    </p>
+                  </div>
+                )}
+
+                <TextWithLinks
+                  text={message.text}
+                  className="text-lg leading-relaxed break-words whitespace-pre-wrap"
+                />
               </div>
-            ) : null}
-          </div>
-        )}
+            </div>
+          </motion.div>
+
+          {isLastInTimeGroup && (
+            <div
+              className={`mt-1 text-xs text-gray-400 ${
+                isCurrentUser ? "text-right" : "text-left"
+              }`}
+            >
+              {isSending ? (
+                <div className="flex items-center gap-1 justify-end">
+                  <span>Sending</span>
+                  <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
+                </div>
+              ) : showTimestamp && message.timestamp ? (
+                <div
+                  className={`flex items-center gap-1 ${
+                    isCurrentUser ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <span className="text-[12px]">
+                    {formatTime(message.timestamp)}
+                  </span>
+                  {isCurrentUser && (
+                    <>
+                      <span> • </span>
+                      <span className="text-[12px]"> Sent</span>
+                    </>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          )}
+        </div>
       </div>
 
       <BottomSheet

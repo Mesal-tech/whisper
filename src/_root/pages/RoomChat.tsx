@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useMemo, ChangeEvent } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import type { ChangeEvent } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth, db } from "../../lib/firebase";
@@ -20,7 +21,7 @@ import MessageBubble from "../../components/MessageBubble";
 import ThreadReplyModal from "../../components/ThreadReplyModal";
 import { useUserStore, useUsername } from "../../store/userStore";
 import { IoIosArrowBack } from "react-icons/io";
-import { FiX, FiCamera } from "react-icons/fi"
+import { FiX, FiCamera } from "react-icons/fi";
 import { FaEllipsisV, FaChevronDown } from "react-icons/fa";
 
 // Message grouping utility functions
@@ -399,22 +400,28 @@ function RoomChat() {
                 <div
                   className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center overflow-hidden ring-2 ring-gray-600/50 shadow-lg mx-auto"
                   style={{
-                    backgroundImage: room.avatar && room.avatar.startsWith("http")
-                      ? `url(${room.avatar})`
-                      : "none",
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
+                    backgroundImage:
+                      room.avatar && room.avatar.startsWith("http")
+                        ? `url(${room.avatar})`
+                        : "none",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
                   }}
                 >
-                  {!room.avatar || !room.avatar.startsWith("http") && (
-                    <span className="text-2xl font-bold text-gray-400">
-                      {room.name.charAt(0).toUpperCase()}
-                    </span>
-                  )}
+                  {!room.avatar ||
+                    (!room.avatar.startsWith("http") && (
+                      <span className="text-2xl font-bold text-gray-400">
+                        {room.name.charAt(0).toUpperCase()}
+                      </span>
+                    ))}
                 </div>
               </div>
-              <h2 className="text-2xl font-bold mb-3 text-white">{room.name}</h2>
-              <p className="text-gray-400 mb-8 text-sm leading-relaxed">{room.bio}</p>
+              <h2 className="text-2xl font-bold mb-3 text-white">
+                {room.name}
+              </h2>
+              <p className="text-gray-400 mb-8 text-sm leading-relaxed">
+                {room.bio}
+              </p>
               <div className="flex gap-4">
                 <motion.button
                   onClick={handleCancelJoin}
@@ -450,9 +457,13 @@ function RoomChat() {
             <IoIosArrowBack className="text-xl text-gray-300" />
           </motion.button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold truncate text-white">{room.name}</h1>
+            <h1 className="text-xl font-bold truncate text-white">
+              {room.name}
+            </h1>
             <p className="text-xs text-gray-400 flex items-center">
-              <span>{memberCount} {memberCount === 1 ? "member" : "members"}</span>
+              <span>
+                {memberCount} {memberCount === 1 ? "member" : "members"}
+              </span>
               {threadCount > 0 && (
                 <>
                   {" • "}
@@ -589,7 +600,9 @@ function RoomChat() {
             <motion.div
               className={`bg-[#0f0f0f] w-full max-w-lg ${
                 isMobile ? "rounded-t-3xl" : "rounded-2xl"
-              } p-6 shadow-2xl ring-1 ring-gray-800/50 ${isMobile ? "touch-pan-y" : ""}`}
+              } p-6 shadow-2xl ring-1 ring-gray-800/50 ${
+                isMobile ? "touch-pan-y" : ""
+              }`}
               initial={isMobile ? { y: "100%" } : { scale: 0.95, opacity: 0 }}
               animate={isMobile ? { y: 0 } : { scale: 1, opacity: 1 }}
               exit={isMobile ? { y: "100%" } : { scale: 0.95, opacity: 0 }}
@@ -684,7 +697,9 @@ function RoomChat() {
                 <div className="w-12 h-12 bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">⚠️</span>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">Delete Room</h3>
+                <h3 className="text-xl font-bold text-white mb-2">
+                  Delete Room
+                </h3>
                 <p className="text-gray-400 mb-6 text-sm">
                   Are you sure you want to delete "{room.name}"? This action
                   cannot be undone.

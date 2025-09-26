@@ -1,4 +1,5 @@
-import { useState, useEffect, ChangeEvent } from "react";
+import { useState, useEffect } from "react";
+import type { ChangeEvent } from "react";
 import { useNavigate, Outlet, useParams } from "react-router-dom";
 import { FiPlus, FiX, FiCamera } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,7 +18,8 @@ const EmptyRooms = () => (
     />
     <h3 className="text-xl font-medium mb-2">No Rooms Found</h3>
     <p className="text-sm text-center max-w-xs text-gray-300">
-      Start by creating your first room to connect and chat with like-minded people.
+      Start by creating your first room to connect and chat with like-minded
+      people.
     </p>
   </div>
 );
@@ -218,12 +220,14 @@ function Rooms() {
             </div>
 
             {/* Message Box */}
-            <div className={`${id ? 'fixed md:static z-10 top-0 left-0' : 'hidden md:flex'} w-full bg-[#111111] md:bg-white/5 h-full`}>
-              {id ? (
-                <Outlet />
-              ) : (
-                <p>Select a conversation to start talking</p>
-              )}
+            <div
+              className={`${
+                id
+                  ? "fixed md:static z-10 top-0 left-0"
+                  : "hidden md:flex items-center justify-center"
+              } w-full bg-[#111111] md:bg-white/5 h-full`}
+            >
+              {id ? <Outlet /> : <p>Select a conversation to start talking</p>}
             </div>
           </div>
         ) : (
@@ -235,8 +239,9 @@ function Rooms() {
       <AnimatePresence>
         {showModal && (
           <motion.div
-            className={`fixed inset-0 bg-black/40  z-[60] flex ${isMobile ? "items-end" : "items-center"
-              } justify-center backdrop-blur-sm`}
+            className={`fixed inset-0 bg-black/40  z-[60] flex ${
+              isMobile ? "items-end" : "items-center"
+            } justify-center backdrop-blur-sm`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -244,8 +249,11 @@ function Rooms() {
             onClick={closeModal}
           >
             <motion.div
-              className={`bg-black/50 backdrop-blur-sm border border-white/10 hover:border-white/20 hover:bg-black/10 transition-all duration-500 overflow-hidden w-full max-w-lg ${isMobile ? "rounded-t-3xl h-[40rem]" : "rounded-2xl"
-                } p-6 shadow-2xl ring-1 ring-gray-800/50 ${isMobile ? "touch-pan-y" : ""}`}
+              className={`bg-black/50 backdrop-blur-sm border border-white/10 hover:border-white/20 hover:bg-black/10 transition-all duration-500 overflow-hidden w-full max-w-lg ${
+                isMobile ? "rounded-t-3xl h-[40rem]" : "rounded-2xl"
+              } p-6 shadow-2xl ring-1 ring-gray-800/50 ${
+                isMobile ? "touch-pan-y" : ""
+              }`}
               initial={isMobile ? { y: "100%" } : { scale: 0.95, opacity: 0 }}
               animate={isMobile ? { y: 0 } : { scale: 1, opacity: 1 }}
               exit={isMobile ? { y: "100%" } : { scale: 0.95, opacity: 0 }}
@@ -265,11 +273,11 @@ function Rooms() {
                 className={`absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 opacity-3 blur-xl -z-10`}
                 animate={{
                   scale: [1, 1.02, 1],
-                  opacity: [0.03, 0.05, 0.03]
+                  opacity: [0.03, 0.05, 0.03],
                 }}
                 transition={{
                   duration: 3,
-                  repeat: Infinity
+                  repeat: Infinity,
                 }}
               />
 
@@ -277,7 +285,9 @@ function Rooms() {
                 <div className="w-16 h-1 bg-gray-600 rounded-full mx-auto mb-6 opacity-80"></div>
               )}
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-white">Create New Room</h2>
+                <h2 className="text-2xl font-bold text-white">
+                  Create New Room
+                </h2>
                 <button
                   onClick={closeModal}
                   className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-gray-800/50 transition-all duration-200 disabled:opacity-50"
@@ -293,13 +303,18 @@ function Rooms() {
                     className="w-24 h-24 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden ring-2 ring-gray-700 hover:ring-purple-500 transition-all duration-200 cursor-pointer group"
                     style={{
                       backgroundImage: `url(${avatarPreview || bgImage})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
                     }}
-                    onClick={() => document.getElementById('avatar-upload')?.click()}
+                    onClick={() =>
+                      document.getElementById("avatar-upload")?.click()
+                    }
                   >
                     {!avatarPreview && (
-                      <FiCamera size={32} className="text-gray-400 group-hover:text-purple-400 transition-colors duration-200" />
+                      <FiCamera
+                        size={32}
+                        className="text-gray-400 group-hover:text-purple-400 transition-colors duration-200"
+                      />
                     )}
                   </div>
                   <input
