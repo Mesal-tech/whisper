@@ -19,7 +19,7 @@ export default function Sidebar() {
       <aside className="hidden md:flex sticky left-0 top-0 h-screen w-60 flex-col items-center lg:items-start py-6 px-4">
         {/* Logo */}
         <div className="mb-8 flex items-center justify-center lg:justify-start w-full">
-          <img src="/whispers.svg" alt="Whispers" className="h-10 w-auto" />
+          <img src="/assets/images/logo2.svg" alt="Whispers" className="h-10 w-auto" />
         </div>
 
         {/* Navigation Items */}

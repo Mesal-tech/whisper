@@ -529,13 +529,9 @@ function InputBox({
         {/* Thread mode indicator with dynamic cost */}
         {isThreadMode && (
           <div className="flex items-center mb-2 text-sm">
-            <div
-              className={`text-xs px-3 py-1 rounded-full border flex items-center gap-2 ${freeThreadsRemaining > 0
-                  ? "bg-green-500/20 text-green-300 border-green-500/30"
-                  : "bg-purple-500/20 text-purple-300 border-purple-500/30"
-                }`}
-            >
-              Thread • {getThreadCostText()}
+            <div className="text-xs px-3 py-1 rounded-full border flex items-center gap-2 bg-purple-500/20 text-purple-300 border-purple-500/30">
+              {/* ##### Thread • {getThreadCostText()} ##### */}
+              Message would send as Thread
             </div>
           </div>
         )}
@@ -553,9 +549,7 @@ function InputBox({
           <div className="flex items-end">
             <button
               className={`p-3 transition-colors duration-200 flex-shrink-0 flex items-center justify-center ${isThreadMode
-                  ? freeThreadsRemaining > 0
-                    ? "text-green-500 hover:text-green-400"
-                    : "text-purple-500 hover:text-purple-400"
+                  ? "text-purple-500 hover:text-purple-400"
                   : "text-gray-400 hover:text-white"
                 }`}
               onClick={() => setIsThreadMode(!isThreadMode)}
@@ -582,9 +576,7 @@ function InputBox({
               disabled={!text.trim() || disabled}
               className={`p-3 transition-all duration-200 flex-shrink-0 bg-[#373737] rounded-full mr-2 flex items-center justify-center ${text.trim() && !disabled
                   ? isThreadMode
-                    ? freeThreadsRemaining > 0
-                      ? "text-green-500 hover:text-green-400 transform hover:scale-105 active:scale-95"
-                      : "text-purple-500 hover:text-purple-400 transform hover:scale-105 active:scale-95"
+                    ? "text-purple-500 hover:text-purple-400 transform hover:scale-105 active:scale-95"
                     : replyTo
                       ? "text-purple-500 hover:text-purple-400 transform hover:scale-105 active:scale-95"
                       : "text-purple-500 hover:text-purple-400 transform hover:scale-105 active:scale-95"
