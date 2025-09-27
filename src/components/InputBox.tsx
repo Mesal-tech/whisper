@@ -45,18 +45,15 @@ function extractUrls(text: string): string[] {
 // Fetch URL metadata
 async function fetchUrlPreview(url: string): Promise<UrlPreview | null> {
   try {
-    // Try to fetch the page
     const response = await fetch(
       `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
     );
     const data = await response.json();
     const html = data.contents;
 
-    // Parse HTML to extract metadata
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
 
-    // Extract Open Graph and meta tags
     const getMetaContent = (property: string) => {
       const meta =
         doc.querySelector(`meta[property="${property}"]`) ||
@@ -75,7 +72,6 @@ async function fetchUrlPreview(url: string): Promise<UrlPreview | null> {
     const image = getMetaContent("og:image") || "";
     const siteName = getMetaContent("og:site_name") || new URL(url).hostname;
 
-    // Try to get favicon
     let favicon = "";
     const faviconLink =
       doc.querySelector('link[rel="icon"]') ||
@@ -84,11 +80,9 @@ async function fetchUrlPreview(url: string): Promise<UrlPreview | null> {
       favicon = faviconLink.getAttribute("href") || "";
       if (favicon && !favicon.startsWith("http")) {
         const baseUrl = new URL(url);
-        favicon = `${baseUrl.protocol}//${baseUrl.host}${favicon.startsWith("/") ? "" : "/"
-          }${favicon}`;
+        favicon = `${baseUrl.protocol}//${baseUrl.host}${favicon.startsWith("/") ? "" : "/"}${favicon}`;
       }
     } else {
-      // Fallback to default favicon location
       const baseUrl = new URL(url);
       favicon = `${baseUrl.protocol}//${baseUrl.host}/favicon.ico`;
     }
@@ -103,8 +97,6 @@ async function fetchUrlPreview(url: string): Promise<UrlPreview | null> {
     };
   } catch (error) {
     console.error("Error fetching URL preview:", error);
-
-    // Fallback: create basic preview from URL
     try {
       const urlObj = new URL(url);
       return {
@@ -131,7 +123,7 @@ function UrlPreviewCard({
   const [faviconError, setFaviconError] = useState(false);
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3">
+    <div className="bg-white/5 border border-white/10 rounded-lg p-3 mb-3">
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {preview.favicon && !faviconError && (
@@ -154,7 +146,7 @@ function UrlPreviewCard({
         </button>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-col-reverse md:flex-row gap-3">
         <div className="flex-1 min-w-0">
           <h4 className="text-sm font-medium text-white mb-1 line-clamp-2">
             {preview.title}
@@ -164,7 +156,7 @@ function UrlPreviewCard({
               {preview.description}
             </p>
           )}
-          <div className="flex items-center gap-1 text-xs text-blue-400">
+          <div className="flex items-center gap-1 text-xs text-purple-400">
             <HiExternalLink className="w-3 h-3" />
             <span className="truncate">{new URL(preview.url).hostname}</span>
           </div>
@@ -175,7 +167,7 @@ function UrlPreviewCard({
             <img
               src={preview.image}
               alt=""
-              className="w-16 h-16 object-cover rounded"
+              className="w-full md:w-18 md:h-18 object-cover rounded"
               onError={() => setImageError(true)}
             />
           </div>
@@ -185,7 +177,6 @@ function UrlPreviewCard({
   );
 }
 
-// First-time refill prompt modal
 function RefillPromptModal({
   isOpen,
   onClose,
@@ -212,7 +203,7 @@ function RefillPromptModal({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 text-center">
-              <div className="w-16 h-16 bg-transprent rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-transparent rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-6xl">✨</span>
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">
@@ -225,7 +216,7 @@ function RefillPromptModal({
               </p>
               <button
                 onClick={onClose}
-                className="w-full px-4 py-2 text-lg font-medium text-white bg-blue-500 rounded-lg"
+                className="w-full px-4 py-2 text-lg font-medium text-white bg-purple-500 rounded-lg"
               >
                 Got it!
               </button>
@@ -237,7 +228,6 @@ function RefillPromptModal({
   );
 }
 
-// Standard insufficient points modal
 function InsufficientPointsModal({
   isOpen,
   onClose,
@@ -318,66 +308,51 @@ function InputBox({
     if (!text.trim() || disabled) return;
 
     let messageText = text.trim();
-    let messageType: "message" | "thread" = "message";
+    let messageType: "message" | "thread" = isThreadMode ? "thread" : "message";
 
-    // Check for /thread command
-    if (messageText.startsWith("/thread ")) {
-      messageText = messageText.substring(8); // Remove "/thread " prefix
-      messageType = "thread";
-    }
+    if (!messageText.trim()) return;
 
-    if (!messageText.trim()) return; // Don't send empty messages after removing command
+    // if (messageType === "thread") {
+    //   const userId = auth.currentUser?.uid;
+    //   if (!userId) {
+    //     navigate("/auth/signin");
+    //     return;
+    //   }
 
-    // Thread logic with trial system
-    if (messageType === "thread") {
-      const userId = auth.currentUser?.uid;
-      if (!userId) {
-        navigate("/auth/signin");
-        return;
-      }
+    //   if (freeThreadsRemaining > 0) {
+    //     try {
+    //       await updateUser(userId, {
+    //         freeThreadsRemaining: freeThreadsRemaining - 1,
+    //       });
+    //     } catch (error) {
+    //       console.error("Error updating free threads:", error);
+    //     }
+    //   } else {
+    //     const currentPoints = parseInt(userPoints) || 0;
 
-      // Priority: Free threads first, then paid points
-      if (freeThreadsRemaining > 0) {
-        // Use free thread
-        try {
-          await updateUser(userId, {
-            freeThreadsRemaining: freeThreadsRemaining - 1,
-          });
-        } catch (error) {
-          console.error("Error updating free threads:", error);
-        }
-      } else {
-        // No free threads left, check points
-        const currentPoints = parseInt(userPoints) || 0;
+    //     if (currentPoints < 1) {
+    //       if (!hasSeenRefillPrompt) {
+    //         setShowRefillPrompt(true);
+    //         try {
+    //           await updateUser(userId, { hasSeenRefillPrompt: true });
+    //         } catch (error) {
+    //           console.error("Error updating refill prompt flag:", error);
+    //         }
+    //       } else {
+    //         setShowInsufficientPointsModal(true);
+    //       }
+    //       return;
+    //     }
 
-        if (currentPoints < 1) {
-          // No points either - show appropriate modal
-          if (!hasSeenRefillPrompt) {
-            // First time seeing this - show refill prompt and mark as seen
-            setShowRefillPrompt(true);
-            try {
-              await updateUser(userId, { hasSeenRefillPrompt: true });
-            } catch (error) {
-              console.error("Error updating refill prompt flag:", error);
-            }
-          } else {
-            // Already seen refill prompt - show standard insufficient message
-            setShowInsufficientPointsModal(true);
-          }
-          return; // Don't send the thread
-        }
+    //     const newPoints = Math.max(0, currentPoints - 1).toString();
+    //     try {
+    //       await updateUser(userId, { points: newPoints });
+    //     } catch (error) {
+    //       console.error("Error updating points:", error);
+    //     }
+    //   }
+    // }
 
-        // Has points - deduct 1 point
-        const newPoints = Math.max(0, currentPoints - 1).toString();
-        try {
-          await updateUser(userId, { points: newPoints });
-        } catch (error) {
-          console.error("Error updating points:", error);
-        }
-      }
-    }
-
-    // Send message with preview if available
     const preview = urlPreviews.length > 0 ? urlPreviews[0] : undefined;
     onSend(messageText.trim(), messageType, preview);
 
@@ -417,8 +392,6 @@ function InputBox({
     const value = e.target.value;
     setText(value);
     setIsTyping(value.length > 0);
-
-    setIsThreadMode(value.startsWith("/thread "));
 
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -498,13 +471,12 @@ function InputBox({
       <div className="max-w-screen-xl mx-auto p-2">
         {/* Enhanced Reply Preview */}
         {replyTo && (
-          <div className="bg-[#121212] rounded-lg shadow-lg">
+          <div className="rounded-lg shadow-lg">
             <div className="flex items-start justify-between p-3">
               <div className="flex-1">
-                {/* Reply Header */}
                 <div className="flex items-center gap-2 mb-2">
-                  <HiReply className="w-4 h-4 text-blue-400" />
-                  <span className="text-xs font-medium text-blue-400">
+                  <HiReply className="w-4 h-4 text-purple-400" />
+                  <span className="text-xs font-medium text-purple-400">
                     Replying to {replyTo.userName || "Anonymous"}
                   </span>
                   {replyTo.messageType === "thread" && (
@@ -513,8 +485,7 @@ function InputBox({
                     </span>
                   )}
                 </div>
-
-                <div className="bg-gray-800/30 border border-gray-900 rounded p-2">
+                <div className="bg-white/5 border border-white/10 rounded p-2">
                   <p
                     className="text-sm text-gray-200 line-clamp-2 break-all"
                     style={{ overflowWrap: "break-word" }}
@@ -525,7 +496,6 @@ function InputBox({
                   </p>
                 </div>
               </div>
-
               <button
                 onClick={onCancelReply}
                 className="text-gray-400 hover:text-white ml-3 p-1 hover:bg-gray-700 rounded transition-all duration-200"
@@ -537,22 +507,21 @@ function InputBox({
         )}
 
         {/* URL Previews */}
-        {urlPreviews.map((preview) => (
-          <UrlPreviewCard
-            key={preview.url}
-            preview={preview}
-            onRemove={() => removePreview(preview.url)}
-          />
-        ))}
+        {loadingPreviews.length <= 0 &&
+          urlPreviews.map((preview) => (
+            <UrlPreviewCard
+              key={preview.url}
+              preview={preview}
+              onRemove={() => removePreview(preview.url)}
+            />
+          ))}
 
         {/* Loading Preview */}
         {loadingPreviews.length > 0 && (
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3">
+          <div className="bg-white/5 border border-white/10 rounded-lg p-3 mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm text-gray-400">
-                Loading preview...
-              </span>
+              <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm text-gray-400">Loading preview...</span>
             </div>
           </div>
         )}
@@ -562,8 +531,8 @@ function InputBox({
           <div className="flex items-center mb-2 text-sm">
             <div
               className={`text-xs px-3 py-1 rounded-full border flex items-center gap-2 ${freeThreadsRemaining > 0
-                ? "bg-green-500/20 text-green-300 border-green-500/30"
-                : "bg-purple-500/20 text-purple-300 border-purple-500/30"
+                  ? "bg-green-500/20 text-green-300 border-green-500/30"
+                  : "bg-purple-500/20 text-purple-300 border-purple-500/30"
                 }`}
             >
               Thread • {getThreadCostText()}
@@ -580,22 +549,16 @@ function InputBox({
           </div>
         )}
 
-        <div
-          className={`relative bg-[#1b1b1b] rounded-4xl focus-within:ring-1 transition-all duration-200 py-1 ${isThreadMode
-            ? freeThreadsRemaining > 0
-              ? "border border-green-500/50 focus-within:border-green-500 focus-within:ring-green-500"
-              : "border border-purple-500/50 focus-within:border-purple-500 focus-within:ring-purple-500"
-            : replyTo
-              ? "border border-blue-500/50 focus-within:border-blue-500 focus-within:ring-blue-500"
-              : "focus-within:border-blue-500 focus-within:ring-blue-500"
-            }`}
-        >
+        <div className="relative bg-white/5 border border-white/10 rounded-4xl focus-within:ring-0 transition-all duration-200 py-1">
           <div className="flex items-end">
             <button
-              className="p-3 text-gray-400 hover:text-white transition-colors duration-200 flex-shrink-0 flex items-center justify-center"
-              onClick={() => {
-                /* Media Selection */
-              }}
+              className={`p-3 transition-colors duration-200 flex-shrink-0 flex items-center justify-center ${isThreadMode
+                  ? freeThreadsRemaining > 0
+                    ? "text-green-500 hover:text-green-400"
+                    : "text-purple-500 hover:text-purple-400"
+                  : "text-gray-400 hover:text-white"
+                }`}
+              onClick={() => setIsThreadMode(!isThreadMode)}
               disabled={disabled}
             >
               <GiWool className="w-6 h-6" />
@@ -618,14 +581,14 @@ function InputBox({
               onClick={handleSend}
               disabled={!text.trim() || disabled}
               className={`p-3 transition-all duration-200 flex-shrink-0 bg-[#373737] rounded-full mr-2 flex items-center justify-center ${text.trim() && !disabled
-                ? isThreadMode
-                  ? freeThreadsRemaining > 0
-                    ? "text-green-500 hover:text-green-400 transform hover:scale-105 active:scale-95"
-                    : "text-purple-500 hover:text-purple-400 transform hover:scale-105 active:scale-95"
-                  : replyTo
-                    ? "text-blue-500 hover:text-blue-400 transform hover:scale-105 active:scale-95"
-                    : "text-blue-500 hover:text-blue-400 transform hover:scale-105 active:scale-95"
-                : "text-gray-500 cursor-not-allowed"
+                  ? isThreadMode
+                    ? freeThreadsRemaining > 0
+                      ? "text-green-500 hover:text-green-400 transform hover:scale-105 active:scale-95"
+                      : "text-purple-500 hover:text-purple-400 transform hover:scale-105 active:scale-95"
+                    : replyTo
+                      ? "text-purple-500 hover:text-purple-400 transform hover:scale-105 active:scale-95"
+                      : "text-purple-500 hover:text-purple-400 transform hover:scale-105 active:scale-95"
+                  : "text-gray-500 cursor-not-allowed"
                 }`}
             >
               <HiPaperAirplane
@@ -636,49 +599,41 @@ function InputBox({
           </div>
         </div>
 
-        {/* Command hint with full width */}
-        {text === "/thread" && (
-          <div className="mt-2 text-xs text-gray-400">
-            <span className="bg-gray-800 px-2 py-1 rounded">
-              Type "/thread your message" to create a thread
-            </span>
-          </div>
-        )}
+        {/* First-time Refill Prompt Modal */}
+        <RefillPromptModal
+          isOpen={showRefillPrompt}
+          onClose={() => setShowRefillPrompt(false)}
+        />
+
+        {/* Standard Insufficient Points Modal */}
+        <InsufficientPointsModal
+          isOpen={showInsufficientPointsModal}
+          onClose={() => setShowInsufficientPointsModal(false)}
+        />
       </div>
 
-      {/* First-time Refill Prompt Modal */}
-      <RefillPromptModal
-        isOpen={showRefillPrompt}
-        onClose={() => setShowRefillPrompt(false)}
-      />
-
-      {/* Standard Insufficient Points Modal */}
-      <InsufficientPointsModal
-        isOpen={showInsufficientPointsModal}
-        onClose={() => setShowInsufficientPointsModal(false)}
-      />
       <style>{`
-          textarea::-webkit-scrollbar {
-            width: 4px;
-          }
-          textarea::-webkit-scrollbar-track {
-            background: transparent;
-          }
-          textarea::-webkit-scrollbar-thumb {
-            background-color: #374151;
-            border-radius: 2px;
-          }
-          textarea::-webkit-scrollbar-thumb:hover {
-            background-color: #4b5563;
-          }
-          .line-clamp-2 {
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 2;
-          }
-        `}</style>
-    </div >
+        textarea::-webkit-scrollbar {
+          width: 4px;
+        }
+        textarea::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        textarea::-webkit-scrollbar-thumb {
+          background-color: #374151;
+          border-radius: 2px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover {
+          background-color: #4b5563;
+        }
+        .line-clamp-2 {
+          overflow: hidden;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+        }
+      `}</style>
+    </div>
   );
 }
 

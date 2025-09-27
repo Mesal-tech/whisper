@@ -50,7 +50,7 @@ const RoomItem = ({ room, onClick }: { room: Room; onClick: () => void }) => (
     {/* Avatar */}
     <div
       className="w-14 h-14 rounded-full flex items-center justify-center text-white font-semibold text-xl mr-4 bg-cover bg-center shrink-0 ring-1 ring-gray-700"
-      style={{ backgroundImage: `url(${room.avatar || bgImage})` }}
+      style={{ backgroundImage: `url(${bgImage})` }}
     ></div>
 
     {/* Room Info */}
@@ -306,25 +306,8 @@ function Rooms() {
                       backgroundSize: "cover",
                       backgroundPosition: "center",
                     }}
-                    onClick={() =>
-                      document.getElementById("avatar-upload")?.click()
-                    }
                   >
-                    {!avatarPreview && (
-                      <FiCamera
-                        size={32}
-                        className="text-gray-400 group-hover:text-purple-400 transition-colors duration-200"
-                      />
-                    )}
                   </div>
-                  <input
-                    id="avatar-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    className="hidden"
-                    disabled={isLoading}
-                  />
                 </div>
               </div>
               <div className="mb-6">

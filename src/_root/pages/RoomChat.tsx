@@ -542,7 +542,7 @@ function RoomChat() {
           {!isAtBottom && messages.length > 0 && (
             <motion.button
               onClick={scrollToBottom}
-              className="fixed bottom-28 right-6 bg-gray-800/90 hover:bg-gray-700/90 text-white p-4 rounded-full shadow-xl border border-gray-600/50 backdrop-blur-md transition-all duration-200 z-40"
+              className="fixed bottom-28 right-6 bg-black/50 hover:bg-gray-700/90 text-white p-4 rounded-full shadow-xl border border-gray-600/50 backdrop-blur-md transition-all duration-200 z-40"
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
             >

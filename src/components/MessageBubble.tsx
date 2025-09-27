@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   motion,
   useMotionValue,
@@ -6,6 +6,7 @@ import {
   AnimatePresence,
 } from "framer-motion";
 import { HiReply, HiTrash, HiClipboardCopy } from "react-icons/hi";
+import { FiX } from "react-icons/fi"
 import type { PanInfo } from "framer-motion";
 import type { Message } from "../types";
 
@@ -77,6 +78,16 @@ function BottomSheet({
   onDelete,
   showDelete,
 }: BottomSheetProps) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -84,78 +95,79 @@ function BottomSheet({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="fixed inset-0 bg-black/50 z-[60]"
+          transition={{ duration: 0.3 }}
+          className={`fixed inset-0 bg-black/50 bg-opacity-60 z-[60] flex ${
+              isMobile ? "items-end" : "items-center"
+            } justify-center backdrop-blur-sm`}
           onClick={onClose}
         >
           <motion.div
-            initial={{ y: "100%", opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "100%", opacity: 0 }}
-            transition={{
-              type: "spring",
-              damping: 25,
-              stiffness: 200,
-              duration: 0.4,
-            }}
-            className="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-gray-700 rounded-t-4xl p-6 z-60"
+            className={`bg-black/90 backdrop-blur-sm w-full max-w-lg ${
+              isMobile ? "rounded-t-3xl" : "rounded-2xl"
+            } p-6 shadow-2xl ring-1 ring-white/10 ${
+              isMobile ? "touch-pan-y" : ""
+            }`}
+            initial={isMobile ? { y: "100%" } : { scale: 0.95, opacity: 0 }}
+            animate={isMobile ? { y: 0 } : { scale: 1, opacity: 1 }}
+            exit={isMobile ? { y: "100%" } : { scale: 0.95, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             onClick={(e) => e.stopPropagation()}
+            drag={isMobile ? "y" : false}
+            dragConstraints={{ top: 0, bottom: 500 }}
+            dragElastic={0.2}
+            onDragEnd={(_event, info) => {
+              if (isMobile && info.offset.y > 200) {
+                onClose();
+              }
+            }}
           >
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.3 }}
-            >
-              <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mb-4" />
-
-              <div className="space-y-3">
-                <motion.button
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15, duration: 0.3 }}
-                  onClick={() => {
-                    onCopy();
-                    onClose();
-                  }}
-                  className="flex items-center gap-3 w-full p-3 text-left text-white hover:bg-gray-800 rounded-lg transition-colors"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <HiClipboardCopy className="w-5 h-5 text-gray-400" />
-                  <span>Copy message</span>
-                </motion.button>
-
-                {showDelete && onDelete && (
-                  <motion.button
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2, duration: 0.3 }}
-                    onClick={() => {
-                      onDelete();
-                      onClose();
-                    }}
-                    className="flex items-center gap-3 w-full p-3 text-left text-red-400 hover:bg-gray-800 rounded-lg transition-colors"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <HiTrash className="w-5 h-5" />
-                    <span>Delete message</span>
-                  </motion.button>
-                )}
-              </div>
-
+            {isMobile && (
+              <div className="w-16 h-1 bg-white/40 rounded-full mx-auto mb-6 opacity-80"></div>
+            )}
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">Message Options</h2>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-gray-800/50 transition-all duration-200"
+              >
+                <FiX size={24} />
+              </button>
+            </div>
+            <div className="space-y-3">
               <motion.button
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.25, duration: 0.3 }}
-                onClick={onClose}
-                className="w-full mt-4 p-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                transition={{ delay: 0.1, duration: 0.3 }}
+                onClick={() => {
+                  onCopy();
+                  onClose();
+                }}
+                className="flex items-center gap-3 w-full p-3 text-left text-white hover:bg-white/10 rounded-lg transition-colors"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                Cancel
+                <HiClipboardCopy className="w-5 h-5 text-gray-400" />
+                <span>Copy message</span>
               </motion.button>
-            </motion.div>
+
+              {showDelete && onDelete && (
+                <motion.button
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2, duration: 0.3 }}
+                  onClick={() => {
+                    onDelete();
+                    onClose();
+                  }}
+                  className="flex items-center gap-3 w-full p-3 text-left text-red-400 hover:bg-gray-800 rounded-lg transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <HiTrash className="w-5 h-5" />
+                  <span>Delete message</span>
+                </motion.button>
+              )}
+            </div>
           </motion.div>
         </motion.div>
       )}
@@ -181,10 +193,8 @@ function MessageBubble({
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isDragging = useRef(false);
 
-  // Transform drag value to opacity for reply icon - only for regular messages
   const replyIconOpacity = useTransform(dragX, [0, 40, 80], [0, 0.7, 1]);
 
-  // Find the message being replied to
   const repliedToMessage = message.replyTo
     ? allMessages.find((msg) => msg.id === message.replyTo)
     : null;
@@ -321,7 +331,6 @@ function MessageBubble({
     return (
       <div className={`flex group relative select-none ${getMarginTop()}`}>
         <div className="w-full relative">
-          {/* Main Thread Bubble */}
           <div
             className={`w-full mx-auto max-w-[30rem] p-4 shadow-sm transition-all duration-200 ${getBorderRadius()} bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-white/20 hover:bg-white/10 transition-all duration-500 overflow-hidden`}
             style={{ transform: "translate3d(0, 0, 0)" }}
@@ -329,7 +338,6 @@ function MessageBubble({
             onPointerUp={handleLongPressEnd}
             onPointerLeave={handleLongPressEnd}
           >
-            {/* Background gradient */}
             <motion.div
               className={`absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 transform-gpu will-change-transform transition opacity-3 blur-xl -z-10`}
               animate={{
@@ -354,7 +362,6 @@ function MessageBubble({
               )}
             </div>
 
-            {/* Nested Message */}
             <div className="bg-white/5 text-center rounded-xl border border-white/10 group-hover:bg-white/10 transition-colors p-3">
               {repliedToMessage && (
                 <div
@@ -391,7 +398,6 @@ function MessageBubble({
                 </div>
               )}
 
-              {/* Reply Button - Outside and Bottom Right */}
               {onThreadReply && (
                 <div className="flex justify-end mt-2">
                   <button
@@ -428,11 +434,7 @@ function MessageBubble({
         </motion.div>
       </div>
 
-      <div
-        className={`relative z-10 flex ${
-          isCurrentUser ? "justify-end" : "justify-start"
-        }`}
-      >
+      <div className={`relative z-10 flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
         <div className="flex flex-col max-w-[40vh] lg:max-w-md relative">
           <motion.div
             style={{ x: dragX }}
@@ -503,9 +505,7 @@ function MessageBubble({
 
           {isLastInTimeGroup && (
             <div
-              className={`mt-1 text-xs text-gray-400 ${
-                isCurrentUser ? "text-right" : "text-left"
-              }`}
+              className={`mt-1 text-xs text-gray-400 ${isCurrentUser ? "text-right" : "text-left"}`}
             >
               {isSending ? (
                 <div className="flex items-center gap-1 justify-end">
@@ -514,13 +514,9 @@ function MessageBubble({
                 </div>
               ) : showTimestamp && message.timestamp ? (
                 <div
-                  className={`flex items-center gap-1 ${
-                    isCurrentUser ? "justify-end" : "justify-start"
-                  }`}
+                  className={`flex items-center gap-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}
                 >
-                  <span className="text-[12px]">
-                    {formatTime(message.timestamp)}
-                  </span>
+                  <span className="text-[12px]">{formatTime(message.timestamp)}</span>
                   {isCurrentUser && (
                     <>
                       <span> • </span>
