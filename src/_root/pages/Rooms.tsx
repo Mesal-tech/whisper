@@ -179,7 +179,7 @@ function Rooms() {
   return (
     <div className="h-screen text-white flex flex-col">
       {/* Fixed Header */}
-      <div className="h-[4rem] bg-[#111111] flex items-center justify-between p-4 border-b border-gray-800 fixed top-0 left-0 right-0 z-20">
+      <div className="h-[4rem] bg-[#111111] flex items-center justify-between p-4 border-b border-gray-800 sticky top-0 z-10">
         <div className="flex items-center">
           <h1 className="text-3xl font-semibold">Rooms</h1>
         </div>
@@ -191,8 +191,8 @@ function Rooms() {
         </button>
       </div>
 
-      {/* Content with top padding to account for fixed header */}
-      <div className="flex-1 overflow-y-auto h-full pt-[4rem]">
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto h-full">
         {isLoading && rooms.length === 0 ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
@@ -223,7 +223,7 @@ function Rooms() {
             <div
               className={`${
                 id
-                  ? "fixed md:static z-10 top-[4rem] left-0"
+                  ? "fixed md:static z-10 top-0 left-0"
                   : "hidden md:flex items-center justify-center"
               } w-full bg-[#111111] md:bg-white/5 h-full`}
             >
