@@ -178,6 +178,19 @@ function Rooms() {
 
   return (
     <div className="h-screen text-white flex flex-col">
+      {/* Fixed Header */}
+      <div className="h-[4rem] bg-[#111111] flex items-center justify-between p-4 border-b border-gray-800 sticky top-0 z-10">
+        <div className="flex items-center">
+          <h1 className="text-3xl font-semibold">Rooms</h1>
+        </div>
+        <button
+          className="text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-gray-800"
+          onClick={() => setShowModal(true)}
+        >
+          <FiPlus size={24} />
+        </button>
+      </div>
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto h-full">
         {isLoading && rooms.length === 0 ? (
@@ -188,19 +201,6 @@ function Rooms() {
           <div className="flex w-full h-full">
             {/* Rooms list */}
             <div className="md:max-w-[20rem] w-full">
-              {/* Header */}
-              <div className="h-[4rem] bg-[#111111] flex items-center justify-between p-4 border-b border-gray-800 sticky top-0 z-10">
-                <div className="flex items-center">
-                  <h1 className="text-3xl font-semibold">Rooms</h1>
-                </div>
-                <button
-                  className="text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-gray-800"
-                  onClick={() => setShowModal(true)}
-                >
-                  <FiPlus size={24} />
-                </button>
-              </div>
-
               {/* Error Display */}
               {error && (
                 <div className="bg-red-900/20 border border-red-500/30 text-red-300 p-3 m-4 rounded-lg shadow-sm">
@@ -306,8 +306,7 @@ function Rooms() {
                       backgroundSize: "cover",
                       backgroundPosition: "center",
                     }}
-                  >
-                  </div>
+                  ></div>
                 </div>
               </div>
               <div className="mb-6">

@@ -6,7 +6,7 @@ import {
   AnimatePresence,
 } from "framer-motion";
 import { HiReply, HiTrash, HiClipboardCopy } from "react-icons/hi";
-import { FiX } from "react-icons/fi"
+import { FiX } from "react-icons/fi";
 import type { PanInfo } from "framer-motion";
 import type { Message } from "../types";
 
@@ -29,7 +29,9 @@ interface BottomSheetProps {
   onClose: () => void;
   onCopy: () => void;
   onDelete?: () => void;
+  onReply?: () => void;
   showDelete: boolean;
+  showReply: boolean;
 }
 
 // URL detection regex
@@ -76,7 +78,9 @@ function BottomSheet({
   onClose,
   onCopy,
   onDelete,
+  onReply,
   showDelete,
+  showReply,
 }: BottomSheetProps) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -97,8 +101,8 @@ function BottomSheet({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
           className={`fixed inset-0 bg-black/50 bg-opacity-60 z-[60] flex ${
-              isMobile ? "items-end" : "items-center"
-            } justify-center backdrop-blur-sm`}
+            isMobile ? "items-end" : "items-center"
+          } justify-center backdrop-blur-sm`}
           onClick={onClose}
         >
           <motion.div
@@ -134,10 +138,28 @@ function BottomSheet({
               </button>
             </div>
             <div className="space-y-3">
+              {showReply && onReply && (
+                <motion.button
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1, duration: 0.3 }}
+                  onClick={() => {
+                    onReply();
+                    onClose();
+                  }}
+                  className="flex items-center gap-3 w-full p-3 text-left text-white hover:bg-white/10 rounded-lg transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <HiReply className="w-5 h-5 text-blue-400" />
+                  <span>Reply to message</span>
+                </motion.button>
+              )}
+
               <motion.button
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1, duration: 0.3 }}
+                transition={{ delay: showReply ? 0.2 : 0.1, duration: 0.3 }}
                 onClick={() => {
                   onCopy();
                   onClose();
@@ -154,7 +176,7 @@ function BottomSheet({
                 <motion.button
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2, duration: 0.3 }}
+                  transition={{ delay: showReply ? 0.3 : 0.2, duration: 0.3 }}
                   onClick={() => {
                     onDelete();
                     onClose();
@@ -189,6 +211,8 @@ function MessageBubble({
   onThreadReply,
 }: MessageBubbleProps) {
   const [showBottomSheet, setShowBottomSheet] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [showDesktopActions, setShowDesktopActions] = useState(false);
   const dragX = useMotionValue(0);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isDragging = useRef(false);
@@ -198,6 +222,14 @@ function MessageBubble({
   const repliedToMessage = message.replyTo
     ? allMessages.find((msg) => msg.id === message.replyTo)
     : null;
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleReplyClick = () => {
     if (repliedToMessage && onScrollToMessage) {
@@ -214,7 +246,7 @@ function MessageBubble({
   };
 
   const handleDragStart = () => {
-    if (message.messageType === "thread") return;
+    if (message.messageType === "thread" || !isMobile) return;
     isDragging.current = true;
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
@@ -227,7 +259,7 @@ function MessageBubble({
     event: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo
   ) => {
-    if (message.messageType === "thread") return;
+    if (message.messageType === "thread" || !isMobile) return;
     const threshold = 80;
     const dragValue = info.offset.x;
 
@@ -243,7 +275,7 @@ function MessageBubble({
     event: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo
   ) => {
-    if (message.messageType === "thread") return;
+    if (message.messageType === "thread" || !isMobile) return;
     const threshold = 60;
     const velocity = info.velocity.x;
     const dragValue = info.offset.x;
@@ -276,6 +308,19 @@ function MessageBubble({
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
+    }
+  };
+
+  // Desktop click handler
+  const handleDesktopClick = () => {
+    if (isMobile) return;
+    setShowBottomSheet(true);
+  };
+
+  // Desktop reply handler
+  const handleDesktopReply = () => {
+    if (onReply) {
+      onReply(message);
     }
   };
 
@@ -332,11 +377,12 @@ function MessageBubble({
       <div className={`flex group relative select-none ${getMarginTop()}`}>
         <div className="w-full relative">
           <div
-            className={`w-full mx-auto max-w-[30rem] p-4 shadow-sm transition-all duration-200 ${getBorderRadius()} bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-white/20 hover:bg-white/10 transition-all duration-500 overflow-hidden`}
+            className={`w-full mx-auto max-w-[30rem] p-4 shadow-sm transition-all duration-200 ${getBorderRadius()} bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-white/20 hover:bg-white/10 transition-all duration-500 overflow-hidden cursor-pointer`}
             style={{ transform: "translate3d(0, 0, 0)" }}
-            onPointerDown={handleLongPressStart}
-            onPointerUp={handleLongPressEnd}
-            onPointerLeave={handleLongPressEnd}
+            onPointerDown={isMobile ? handleLongPressStart : undefined}
+            onPointerUp={isMobile ? handleLongPressEnd : undefined}
+            onPointerLeave={isMobile ? handleLongPressEnd : undefined}
+            onClick={!isMobile ? handleDesktopClick : undefined}
           >
             <motion.div
               className={`absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 transform-gpu will-change-transform transition opacity-3 blur-xl -z-10`}
@@ -401,7 +447,10 @@ function MessageBubble({
               {onThreadReply && (
                 <div className="flex justify-end mt-2">
                   <button
-                    onClick={() => onThreadReply?.(message)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onThreadReply?.(message);
+                    }}
                     className="text-xs bg-purple-500 text-white px-4 py-2 rounded-full hover:bg-purple-600 transition-colors shadow-sm"
                   >
                     Join Discussion
@@ -417,37 +466,88 @@ function MessageBubble({
           onClose={() => setShowBottomSheet(false)}
           onCopy={copyToClipboard}
           onDelete={onDelete ? () => onDelete(message.id) : undefined}
+          onReply={onReply ? () => onReply(message) : undefined}
           showDelete={isCurrentUser && !!onDelete}
+          showReply={!!onReply}
         />
       </div>
     );
   }
 
   return (
-    <div className={`group relative select-none ${getMarginTop()}`}>
-      <div className="absolute inset-0 flex items-center px-4 pointer-events-none z-0">
-        <motion.div
-          style={{ opacity: replyIconOpacity }}
-          className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center"
-        >
-          <HiReply className="w-4 h-4 text-white" />
-        </motion.div>
-      </div>
+    <div
+      className={`group relative select-none ${getMarginTop()}`}
+      onMouseEnter={() => !isMobile && setShowDesktopActions(true)}
+      onMouseLeave={() => !isMobile && setShowDesktopActions(false)}
+    >
+      {/* Mobile swipe reply indicator */}
+      {isMobile && (
+        <div className="absolute inset-0 flex items-center px-4 pointer-events-none z-0">
+          <motion.div
+            style={{ opacity: replyIconOpacity }}
+            className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center"
+          >
+            <HiReply className="w-4 h-4 text-white" />
+          </motion.div>
+        </div>
+      )}
 
-      <div className={`relative z-10 flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`relative z-10 flex ${
+          isCurrentUser ? "justify-end" : "justify-start"
+        } items-center gap-2`}
+      >
+        {/* Desktop hover actions - left side for current user */}
+        {!isMobile && showDesktopActions && isCurrentUser && (
+          <div className="flex gap-1">
+            <AnimatePresence>
+              {onReply && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  onClick={handleDesktopReply}
+                  className="w-8 h-8 bg-[#121212] hover:bg-gray-800 rounded-full flex items-center justify-center transition-colors shadow-lg"
+                  title="Reply to message"
+                >
+                  <HiReply className="w-4 h-4 text-white" />
+                </motion.button>
+              )}
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                onClick={handleDesktopClick}
+                className="w-8 h-8 bg-[#121212] hover:bg-gray-800 rounded-full flex items-center justify-center transition-colors shadow-lg"
+                title="More options"
+              >
+                <svg
+                  className="w-4 h-4 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                </svg>
+              </motion.button>
+            </AnimatePresence>
+          </div>
+        )}
+
         <div className="flex flex-col max-w-[40vh] lg:max-w-md relative">
           <motion.div
-            style={{ x: dragX }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 80 }}
-            dragElastic={0.1}
+            style={isMobile ? { x: dragX } : {}}
+            drag={isMobile ? "x" : false}
+            dragConstraints={isMobile ? { left: 0, right: 80 } : {}}
+            dragElastic={isMobile ? 0.1 : 0}
             dragMomentum={false}
-            onDragStart={handleDragStart}
-            onDrag={handleDrag}
-            onDragEnd={handleDragEnd}
-            onPointerDown={handleLongPressStart}
-            onPointerUp={handleLongPressEnd}
-            onPointerLeave={handleLongPressEnd}
+            onDragStart={isMobile ? handleDragStart : undefined}
+            onDrag={isMobile ? handleDrag : undefined}
+            onDragEnd={isMobile ? handleDragEnd : undefined}
+            onPointerDown={isMobile ? handleLongPressStart : undefined}
+            onPointerUp={isMobile ? handleLongPressEnd : undefined}
+            onPointerLeave={isMobile ? handleLongPressEnd : undefined}
+            onClick={!isMobile ? handleDesktopClick : undefined}
+            className={!isMobile ? "cursor-pointer" : ""}
           >
             <div
               className={`rounded-[25px] p-3 select-none shadow-sm transition-all duration-200 hover:shadow-md ${getBorderRadius()} ${
@@ -457,7 +557,7 @@ function MessageBubble({
                     : "bg-gradient-to-br from-purple-600 via-purple-500 to-purple-400 text-white"
                   : isHighlighted
                   ? "bg-gray-700 text-white shadow-lg shadow-gray-500/20"
-                  : "bg-white/10 text-white"
+                  : "bg-white/10 text-white hover:bg-white/20"
               }`}
             >
               <div className="flex flex-col">
@@ -476,7 +576,10 @@ function MessageBubble({
                         ? "bg-gray-600/30 border-white hover:bg-gray-600/40"
                         : "bg-gray-700/50 border-gray-400 hover:bg-gray-700/70"
                     }`}
-                    onClick={handleReplyClick}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleReplyClick();
+                    }}
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <HiReply className="w-3 h-3 opacity-60" />
@@ -505,7 +608,9 @@ function MessageBubble({
 
           {isLastInTimeGroup && (
             <div
-              className={`mt-1 text-xs text-gray-400 ${isCurrentUser ? "text-right" : "text-left"}`}
+              className={`mt-1 text-xs text-gray-400 ${
+                isCurrentUser ? "text-right" : "text-left"
+              }`}
             >
               {isSending ? (
                 <div className="flex items-center gap-1 justify-end">
@@ -514,9 +619,13 @@ function MessageBubble({
                 </div>
               ) : showTimestamp && message.timestamp ? (
                 <div
-                  className={`flex items-center gap-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}
+                  className={`flex items-center gap-1 ${
+                    isCurrentUser ? "justify-end" : "justify-start"
+                  }`}
                 >
-                  <span className="text-[12px]">{formatTime(message.timestamp)}</span>
+                  <span className="text-[12px]">
+                    {formatTime(message.timestamp)}
+                  </span>
                   {isCurrentUser && (
                     <>
                       <span> • </span>
@@ -528,6 +637,42 @@ function MessageBubble({
             </div>
           )}
         </div>
+
+        {/* Desktop hover actions - right side for other users */}
+        {!isMobile && showDesktopActions && !isCurrentUser && (
+          <div className="flex gap-1">
+            <AnimatePresence>
+              {onReply && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  onClick={handleDesktopReply}
+                  className="w-8 h-8 bg-[#121212] hover:bg-gray-800 rounded-full flex items-center justify-center transition-colors shadow-lg"
+                  title="Reply to message"
+                >
+                  <HiReply className="w-4 h-4 text-white" />
+                </motion.button>
+              )}
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                onClick={handleDesktopClick}
+                className="w-8 h-8 bg-[#121212] hover:bg-gray-800 rounded-full flex items-center justify-center transition-colors shadow-lg"
+                title="More options"
+              >
+                <svg
+                  className="w-4 h-4 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                </svg>
+              </motion.button>
+            </AnimatePresence>
+          </div>
+        )}
       </div>
 
       <BottomSheet
@@ -535,7 +680,9 @@ function MessageBubble({
         onClose={() => setShowBottomSheet(false)}
         onCopy={copyToClipboard}
         onDelete={onDelete ? () => onDelete(message.id) : undefined}
+        onReply={onReply ? () => onReply(message) : undefined}
         showDelete={isCurrentUser && !!onDelete}
+        showReply={!!onReply}
       />
     </div>
   );
