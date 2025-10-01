@@ -132,7 +132,7 @@ function Signin() {
       return diff > 0 ? -1 : 1;
     }
   };
-  //@ts-ignore
+
   const handleDragEnd = (event: any, info: any) => {
     const { offset, velocity } = info;
     const swipeThreshold = 50;
@@ -189,72 +189,48 @@ function Signin() {
   };
 
   return (
-    <div className="h-dvh bg-black flex flex-col p-4 overflow-x-hidden">
-      {/* Carousel Section */}
-      <div className="flex-1 flex items-center justify-center">
-        <AnimatePresence mode="wait" custom={animationDirection}>
-          <motion.div
-            key={currentSlide}
-            custom={animationDirection}
-            className="flex flex-col items-center text-white text-center select-none cursor-grab active:cursor-grabbing"
-            variants={slideVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            drag="x"
-            dragElastic={0.1}
-            dragMomentum={false}
-            onDragEnd={handleDragEnd}
-            whileDrag={{ scale: 0.98 }}
-            style={{ touchAction: "pan-y pinch-zoom" }}
+    <div className="h-dvh relative flex items-end p-4 overflow-x-hidden">
+      {/* Background Video for Mobile */}
+      <video
+        className="absolute inset-0 w-full h-full object-cover md:hidden"
+        src="/assets/auth-bg.mp4"
+        autoPlay
+        loop
+        muted
+        playsInline
+        aria-hidden="true"
+      />
+      {/* Static Background Image for Desktop */}
+      <div
+        className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat hidden md:block"
+        style={{ backgroundImage: "url('/assets/images/auth-bg.jpeg')" }}
+      />
+      {/* Overlay for readability */}
+      <div className="hidden absolute inset-0 bg-black/10 backdrop-blur-sm z-0" />
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col flex-grow justify-between">
+        {/* Login Button */}
+        <div className="mb-8">
+          <motion.button
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="w-full bg-black/20 border border-gray-500 backdrop-blur-sm hover:bg-black/30 transition-colors font-semibold py-3 rounded-2xl duration-200 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-purple-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            whileHover={{ scale: loading ? 1 : 1.05 }}
+            whileTap={{ scale: loading ? 1 : 0.95 }}
           >
-            <img
-              src={slides[currentSlide].image}
-              alt={`Slide ${currentSlide + 1}`}
-              className="w-full max-w-xs h-auto mb-4 rounded-lg pointer-events-none select-none"
-              draggable={false}
-            />
-            <p className="text-lg pointer-events-none select-none">
-              {slides[currentSlide].text}
-            </p>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="flex items-center justify-center space-x-2 mb-4">
-        {slides.map((_, index) => (
-          <div
-            key={index}
-            className={`h-1 w-8 rounded-full cursor-pointer transition-colors duration-300 ${
-              index === currentSlide
-                ? "bg-yellow-400"
-                : "bg-gray-500 hover:bg-gray-400"
-            }`}
-            onClick={() => handleProgressClick(index)}
-          />
-        ))}
-      </div>
-
-      {/* Login Button */}
-      <div className="mb-8">
-        <button
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          className="w-full bg-black/20 border border-gray-500 backdrop-blur-sm hover:bg-black/30 transition-colors font-semibold py-3 rounded-2xl duration-200 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-        >
-          <div className="flex items-center justify-center space-x-3">
-            {loading ? (
-              <AiOutlineLoading3Quarters className="w-5 h-5 animate-spin text-blue-500" />
-            ) : (
-              <FcGoogle className="w-6 h-6" />
-            )}
-            <span className="text-lg text-white">
-              {loading ? "Signing in..." : "Continue with Google"}
-            </span>
-          </div>
-        </button>
+            <div className="flex items-center justify-center space-x-3">
+              {loading ? (
+                <AiOutlineLoading3Quarters className="w-5 h-5 animate-spin text-purple-400" />
+              ) : (
+                <FcGoogle className="w-6 h-6" />
+              )}
+              <span className="text-lg text-white">
+                {loading ? "Signing in..." : "Continue with Google"}
+              </span>
+            </div>
+          </motion.button>
+        </div>
       </div>
     </div>
   );
