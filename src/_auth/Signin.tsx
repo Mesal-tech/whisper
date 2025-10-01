@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { auth, googleProvider, db } from "../lib/firebase";
 import { signInWithPopup } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -8,7 +8,7 @@ import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { FcGoogle } from "react-icons/fc";
 import { useAuthStore } from "../store/authStore";
 import { useUserStore } from "../store/userStore";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import type { User } from "../types";
 
 // Function to generate a random username
@@ -24,29 +24,11 @@ const generateRandomUsername = () => {
 
 function Signin() {
   const [loading, setLoading] = useState(false);
+  const [playbackDirection, setPlaybackDirection] = useState<"forward" | "reverse">("forward");
+  const videoRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
   const setAuthUser = useAuthStore((state) => state.setUser);
   const { setUser, subscribeToUser } = useUserStore();
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [animationDirection, setAnimationDirection] = useState(0);
-
-  const slides = [
-    {
-      image:
-        "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=300&h=400&fit=crop&crop=entropy&auto=format",
-      text: "Welcome to our amazing app",
-    },
-    {
-      image:
-        "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=300&h=400&fit=crop&crop=entropy&auto=format",
-      text: "Connect with friends worldwide",
-    },
-    {
-      image:
-        "https://images.unsplash.com/photo-1758078911728-f697564fb116?w=300&h=400&fit=crop&crop=entropy&auto=format",
-      text: "Share your moments",
-    },
-  ];
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -117,88 +99,38 @@ function Signin() {
     }
   };
 
-  // Function to calculate the proper direction for circular carousel
-  const calculateDirection = (
-    from: number,
-    to: number,
-    totalSlides: number
-  ) => {
-    const diff = to - from;
-    const absDiff = Math.abs(diff);
-
-    if (absDiff <= totalSlides / 2) {
-      return diff > 0 ? 1 : -1;
-    } else {
-      return diff > 0 ? -1 : 1;
-    }
-  };
-
-  const handleDragEnd = (event: any, info: any) => {
-    const { offset, velocity } = info;
-    const swipeThreshold = 50;
-    const velocityThreshold = 500;
-
-    if (
-      Math.abs(offset.x) > swipeThreshold ||
-      Math.abs(velocity.x) > velocityThreshold
-    ) {
-      const currentIndex = currentSlide;
-      let newIndex;
-
-      if (offset.x > 0 || velocity.x > velocityThreshold) {
-        // Swiped right - go to previous slide
-        newIndex = (currentIndex - 1 + slides.length) % slides.length;
-      } else if (offset.x < 0 || velocity.x < -velocityThreshold) {
-        // Swiped left - go to next slide
-        newIndex = (currentIndex + 1) % slides.length;
-      }
-
-      if (newIndex !== undefined) {
-        const direction = calculateDirection(
-          currentIndex,
-          newIndex,
-          slides.length
-        );
-        setAnimationDirection(direction);
-        setCurrentSlide(newIndex);
+  // Handle video end to toggle playback direction
+  const handleVideoEnd = () => {
+    if (videoRef.current) {
+      if (playbackDirection === "forward") {
+        // Switch to reverse: set playbackRate to -1 and start from the end
+        videoRef.current.playbackRate = -1;
+        videoRef.current.currentTime = videoRef.current.duration;
+        setPlaybackDirection("reverse");
+        videoRef.current.play().catch((error) => console.error("Error playing video in reverse:", error));
+      } else {
+        // Switch to forward: set playbackRate to 1 and start from the beginning
+        videoRef.current.playbackRate = 1;
+        videoRef.current.currentTime = 0;
+        setPlaybackDirection("forward");
+        videoRef.current.play().catch((error) => console.error("Error playing video forward:", error));
       }
     }
-  };
-
-  const handleProgressClick = (index: number) => {
-    if (index !== currentSlide) {
-      const direction = calculateDirection(currentSlide, index, slides.length);
-      setAnimationDirection(direction);
-      setCurrentSlide(index);
-    }
-  };
-
-  const slideVariants = {
-    initial: (direction: number) => ({
-      opacity: 0,
-      x: direction * 300,
-    }),
-    animate: {
-      opacity: 1,
-      x: 0,
-    },
-    exit: (direction: number) => ({
-      opacity: 0,
-      x: direction * -300,
-    }),
   };
 
   return (
-    <div className="h-dvh relative flex items-end p-4 overflow-x-hidden">
+    <div className="h-dvh relative flex flex-col p-4 overflow-x-hidden">
       {/* Background Video for Mobile */}
       <video
+        ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover md:hidden"
-        src="/assets/auth-bg.mp4"
+        src="/assets/videos/mobile-bg.mp4"
         autoPlay
-        loop
         muted
         playsInline
         aria-hidden="true"
+        onEnded={handleVideoEnd}
+        poster="/assets/images/auth-bg.jpeg"
       />
       {/* Static Background Image for Desktop */}
       <div
@@ -206,7 +138,7 @@ function Signin() {
         style={{ backgroundImage: "url('/assets/images/auth-bg.jpeg')" }}
       />
       {/* Overlay for readability */}
-      <div className="hidden absolute inset-0 bg-black/10 backdrop-blur-sm z-0" />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-0" />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col flex-grow justify-between">
