@@ -119,26 +119,14 @@ function Signin() {
   };
 
   return (
-    <div className="h-dvh relative flex items-end p-4 overflow-x-hidden">
-      {/* Background Video for Mobile */}
-      <video
-        ref={videoRef}
-        className="absolute inset-0 w-full h-full object-cover md:hidden"
-        src="/assets/auth-bg.mp4"
-        autoPlay
-        muted
-        playsInline
-        aria-hidden="true"
-        onEnded={handleVideoEnd}
-        poster="/assets/images/auth-bg.jpeg"
-      />
+    <div className="h-[100dvh] relative flex items-end p-4 overflow-x-hidden">
       {/* Static Background Image for Desktop */}
       <div
-        className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat hidden md:block"
+        className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat block"
         style={{ backgroundImage: "url('/assets/images/auth-bg.jpeg')" }}
       />
       {/* Overlay for readability */}
-      <div className="absolute inset-0 bg-black/5 z-0" />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] z-0" />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col flex-grow justify-between">
