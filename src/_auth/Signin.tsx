@@ -138,7 +138,7 @@ function Signin() {
         style={{ backgroundImage: "url('/assets/images/auth-bg.jpeg')" }}
       />
       {/* Overlay for readability */}
-      <div className="absolute inset-0 bg-black/5 backdrop-blur-sm z-0" />
+      <div className="absolute inset-0 bg-black/5 z-0" />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col flex-grow justify-between">
