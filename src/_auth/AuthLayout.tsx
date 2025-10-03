@@ -20,7 +20,21 @@ function AuthLayout() {
     }
   }, [user, navigate]);
 
-  return <Outlet />;
+  return (
+    <main className="flex w-full bg-[#000]">
+      <div className="w-full">
+        <Outlet />
+      </div>
+
+      <div className="hidden md:flex w-full">
+        <img
+          src="/assets/images/auth-bg.jpg"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+      </div>
+    </main>
+  );
 }
 
 export default AuthLayout;

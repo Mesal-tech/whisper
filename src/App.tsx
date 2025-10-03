@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+
 import AuthLayout from "./_auth/AuthLayout";
 import Signin from "./_auth/Signin";
 import RootLayout from "./_root/RootLayout";
@@ -10,26 +12,42 @@ import AnonMessage from "./_root/pages/AnonMessage";
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Auth routes */}
-        <Route path="/auth" element={<AuthLayout />}>
-          <Route path="signin" element={<Signin />} />
-        </Route>
-
-        {/* Main app routes with tabs */}
-        <Route element={<RootLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/rooms" element={<Rooms />}>
-            <Route path="/rooms/:id" element={<RoomChat />} />
+    <main>
+      <Router>
+        <Routes>
+          {/* Auth routes */}
+          <Route path="/auth" element={<AuthLayout />}>
+            <Route path="signin" element={<Signin />} />
           </Route>
-          <Route path="/messages" element={<Messages />} />
-        </Route>
 
-        {/* Anonymous message route (accessible without auth) */}
-        <Route path="/anon/:id" element={<AnonMessage />} />
-      </Routes>
-    </Router>
+          {/* Main app routes with tabs */}
+          <Route element={<RootLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/rooms" element={<Rooms />}>
+              <Route path="/rooms/:id" element={<RoomChat />} />
+            </Route>
+            <Route path="/messages" element={<Messages />} />
+          </Route>
+
+          {/* Anonymous message route (accessible without auth) */}
+          <Route path="/anon/:id" element={<AnonMessage />} />
+        </Routes>
+      </Router>
+
+      {/* Toast Container for notifications */}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
+    </main>
   );
 }
 

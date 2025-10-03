@@ -330,7 +330,7 @@ function Messages() {
   return (
     <div className="h-screen bg-[#111111]">
       <Header />
-      <main className="max-w-7xl mx-auto px-4 mt-10 sm:px-6 lg:px-8 py-16">
+      <main className="max-w-7xl mx-auto px-4 mt-10 md:mt-0 sm:px-6 lg:px-8 py-16 md: py-6">
         <div className="bg-[#2D2D30] border border-gray-700 rounded-lg shadow p-4 mb-4">
           <div className="flex items-center mb-2">
             <HiOutlineMail className="w-10 h-10 text-purple-500 mr-2" />

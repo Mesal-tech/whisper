@@ -4,6 +4,7 @@ import "./index.css";
 import App from "./App.tsx";
 //@ts-ignore
 import "@fontsource/caveat-brush/400.css";
+import "react-toastify/dist/ReactToastify.css";
 
 // import "@fontsource/jost"; // Defaults to weight 400
 // import "@fontsource/jost/400.css"; // Specify weight

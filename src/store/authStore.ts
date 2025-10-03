@@ -1,3 +1,4 @@
+// src/store/authStore
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { User } from "firebase/auth";
