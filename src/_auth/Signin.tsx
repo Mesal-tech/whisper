@@ -220,10 +220,10 @@ function Signin() {
   };
 
   return (
-    <div className="h-[100dvh] bg-black relative flex items-center justify-center p-4 overflow-x-hidden">
+    <div className="h-[100dvh] bg-black relative flex items-center justify-center p-2 md:p-4 overflow-x-hidden">
       {/* Content */}
-      <div className="text-center group relative md:bg-white/5 backdrop-blur-sm md:border border-white/10 rounded-2xl p-8 h-fit transition-all duration-500 space-y-6 overflow-hidden">
-        <div className="max-w-[15rem] mx-auto">
+      <div className="text-center group relative md:bg-white/5 backdrop-blur-sm md:border border-white/10 rounded-2xl p-2 md:p-8 h-fit transition-all duration-500 space-y-6 overflow-hidden">
+        <div className="max-w-[15rem] mx-auto mb-8">
           <img
             src="/assets/images/logow.svg"
             alt="Logo"
