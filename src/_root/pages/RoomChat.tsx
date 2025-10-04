@@ -21,7 +21,7 @@ import MessageBubble from "../../components/MessageBubble";
 import ThreadReplyModal from "../../components/ThreadReplyModal";
 import { useUserStore, useUsername } from "../../store/userStore";
 import { IoIosArrowBack } from "react-icons/io";
-import { FiX, FiCamera } from "react-icons/fi";
+import { FiX } from "react-icons/fi";
 import { FaEllipsisV, FaChevronDown } from "react-icons/fa";
 
 // Message grouping utility functions
@@ -100,8 +100,6 @@ function RoomChat() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showJoinScreen, setShowJoinScreen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [highlightedMessageId, setHighlightedMessageId] = useState<
@@ -211,14 +209,6 @@ function RoomChat() {
         messagesContainerRef.current;
       const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
       setIsAtBottom(isNearBottom);
-    }
-  };
-
-  const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
     }
   };
 
@@ -735,23 +725,6 @@ function RoomChat() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* CUSTOM SCROLLBAR STYLES */}
-      <style>{`
-        .messages-container::-webkit-scrollbar {
-          width: 4px;
-        }
-        .messages-container::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .messages-container::-webkit-scrollbar-thumb {
-          background-color: #374151;
-          border-radius: 2px;
-        }
-        .messages-container::-webkit-scrollbar-thumb:hover {
-          background-color: #4b5563;
-        }
-      `}</style>
     </div>
   );
 }

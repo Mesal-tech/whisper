@@ -2,14 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { HiPaperAirplane, HiReply, HiX, HiExternalLink } from "react-icons/hi";
 import { GiWool } from "react-icons/gi";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-import {
-  useUserStore,
-  useUserPoints,
-  useFreeThreadsRemaining,
-  useHasSeenRefillPrompt,
-} from "../store/userStore";
-import { auth } from "../lib/firebase";
 import type { Message } from "../types";
 
 interface UrlPreview {
@@ -298,12 +290,6 @@ function InputBox({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const navigate = useNavigate();
-  const userPoints = useUserPoints();
-  const freeThreadsRemaining = useFreeThreadsRemaining();
-  const hasSeenRefillPrompt = useHasSeenRefillPrompt();
-  const { updateUser } = useUserStore();
-
   const handleSend = async () => {
     if (!text.trim() || disabled) return;
 
@@ -311,47 +297,6 @@ function InputBox({
     let messageType: "message" | "thread" = isThreadMode ? "thread" : "message";
 
     if (!messageText.trim()) return;
-
-    // if (messageType === "thread") {
-    //   const userId = auth.currentUser?.uid;
-    //   if (!userId) {
-    //     navigate("/auth/signin");
-    //     return;
-    //   }
-
-    //   if (freeThreadsRemaining > 0) {
-    //     try {
-    //       await updateUser(userId, {
-    //         freeThreadsRemaining: freeThreadsRemaining - 1,
-    //       });
-    //     } catch (error) {
-    //       console.error("Error updating free threads:", error);
-    //     }
-    //   } else {
-    //     const currentPoints = parseInt(userPoints) || 0;
-
-    //     if (currentPoints < 1) {
-    //       if (!hasSeenRefillPrompt) {
-    //         setShowRefillPrompt(true);
-    //         try {
-    //           await updateUser(userId, { hasSeenRefillPrompt: true });
-    //         } catch (error) {
-    //           console.error("Error updating refill prompt flag:", error);
-    //         }
-    //       } else {
-    //         setShowInsufficientPointsModal(true);
-    //       }
-    //       return;
-    //     }
-
-    //     const newPoints = Math.max(0, currentPoints - 1).toString();
-    //     try {
-    //       await updateUser(userId, { points: newPoints });
-    //     } catch (error) {
-    //       console.error("Error updating points:", error);
-    //     }
-    //   }
-    // }
 
     const preview = urlPreviews.length > 0 ? urlPreviews[0] : undefined;
     onSend(messageText.trim(), messageType, preview);
@@ -457,14 +402,6 @@ function InputBox({
       }
     };
   }, []);
-
-  // Generate thread cost display text
-  const getThreadCostText = () => {
-    if (freeThreadsRemaining > 0) {
-      return `Free (${freeThreadsRemaining} left)`;
-    }
-    return "Costs 1 point";
-  };
 
   return (
     <div className="fixed md:absolute bottom-0 left-0 right-0 bg-[#111111] z-50">

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import type { ChangeEvent } from "react";
 import { useNavigate, Outlet, useParams } from "react-router-dom";
-import { FiPlus, FiX, FiCamera } from "react-icons/fi";
+import { FiPlus, FiX } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "../../store/authStore";
 import { useRoomStore } from "../../store/roomStore";
@@ -75,8 +75,6 @@ function Rooms() {
   const [showModal, setShowModal] = useState(false);
   const [roomName, setRoomName] = useState("");
   const [roomBio, setRoomBio] = useState("");
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   const { id } = useParams();
@@ -126,42 +124,20 @@ function Rooms() {
     }
   }, [user, clearRooms]);
 
-  const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
-    }
-  };
-
   const handleCreateRoom = async () => {
     if (!roomName || !roomBio || !user) return;
-
-    let avatarUrl: string | undefined = undefined;
-
-    // Assuming Firebase Storage integration
-    // You need to import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-    // const storage = getStorage();
-    // if (avatarFile) {
-    //   const storageRef = ref(storage, `room_avatars/${user.uid}/${Date.now()}_${avatarFile.name}`);
-    //   await uploadBytes(storageRef, avatarFile);
-    //   avatarUrl = await getDownloadURL(storageRef);
-    // }
 
     try {
       await createRoom({
         name: roomName,
         bio: roomBio,
         creatorId: user.uid,
-        avatar: avatarUrl, // Pass avatar if uploaded
       });
 
       // Reset form and close modal
       setShowModal(false);
       setRoomName("");
       setRoomBio("");
-      setAvatarPreview(null);
-      setAvatarFile(null);
     } catch (error) {
       console.error("Error creating room:", error);
       // Error is already handled in the store
@@ -172,8 +148,6 @@ function Rooms() {
     setShowModal(false);
     setRoomName("");
     setRoomBio("");
-    setAvatarPreview(null);
-    setAvatarFile(null);
   };
 
   return (
@@ -309,13 +283,13 @@ function Rooms() {
                   <FiX size={24} />
                 </button>
               </div>
-              {/* Avatar Upload */}
+              {/* Avatar */}
               <div className="mb-6 flex justify-center">
                 <div className="relative">
                   <div
                     className="w-24 h-24 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden ring-2 ring-gray-700 hover:ring-purple-500 transition-all duration-200 cursor-pointer group"
                     style={{
-                      backgroundImage: `url(${avatarPreview || bgImage})`,
+                      backgroundImage: `url(${bgImage})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
                     }}
