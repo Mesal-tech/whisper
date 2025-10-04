@@ -18,17 +18,7 @@ import { useUserStore } from "../store/userStore";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import type { User } from "../types";
-
-// Function to generate a random username
-const generateRandomUsername = () => {
-  const adjectives = ["Cool", "Funny", "Brave", "Swift", "Clever", "Bold"];
-  const nouns = ["Panda", "Tiger", "Eagle", "Fox", "Wolf", "Bear"];
-  const randomAdjective =
-    adjectives[Math.floor(Math.random() * adjectives.length)];
-  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
-  const randomNumber = Math.floor(Math.random() * 1000);
-  return `${randomAdjective}${randomNoun}${randomNumber}`;
-};
+import generateRandomUsername from "./generateUsername.ts";
 
 // Function to process Firebase error messages into human-readable format
 const processErrorMessage = async (error: unknown, email?: string): Promise<string> => {
@@ -96,7 +86,7 @@ function Signin() {
         // Create a new user document with all trial fields
         userData = {
           id: firebaseUser.uid,
-          userName: generateRandomUsername(),
+          userName: await generateRandomUsername(), // Use the new async function
           email: firebaseUser.email || "",
           createdAt: Timestamp.now(),
           avatar: firebaseUser.photoURL || "",
