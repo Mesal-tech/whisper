@@ -6,7 +6,6 @@ import {
   useTransform,
   useAnimation,
 } from "framer-motion";
-import type { PanInfo } from "framer-motion";
 import { HiX, HiPaperAirplane } from "react-icons/hi";
 import { auth, db } from "../lib/firebase";
 import {
