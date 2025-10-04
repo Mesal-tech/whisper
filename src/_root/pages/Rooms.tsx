@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import type { ChangeEvent } from "react";
 import { useNavigate, Outlet, useParams } from "react-router-dom";
 import { FiPlus, FiX } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
