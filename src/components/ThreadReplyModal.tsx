@@ -37,7 +37,6 @@ function ThreadReplyModal({
   const [replies, setReplies] = useState<ThreadReply[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [isInputFocused, setIsInputFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const repliesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -49,32 +48,6 @@ function ThreadReplyModal({
   // Motion values for drag interaction
   const dragY = useMotionValue(0);
   const dragThreshold = 150; // Distance to trigger close
-
-  // Transform modal position
-  const modalY = useTransform(
-    dragY,
-    [0, dragThreshold * 2],
-    [0, dragThreshold * 2]
-  );
-
-  // Enhanced bubble transforms - shrink completely out of view
-  const bubbleScale = useTransform(
-    dragY,
-    [0, dragThreshold * 0.7, dragThreshold],
-    [1, 0.3, 0]
-  );
-
-  const bubbleY = useTransform(
-    dragY,
-    [0, dragThreshold * 0.7, dragThreshold],
-    [0, 30, 80]
-  );
-
-  const bubbleOpacity = useTransform(
-    dragY,
-    [0, dragThreshold * 0.5, dragThreshold],
-    [1, 0.7, 0]
-  );
 
   // Backdrop blur and opacity transforms
   const backdropOpacity = useTransform(dragY, [0, dragThreshold], [1, 0]);
@@ -186,31 +159,6 @@ function ThreadReplyModal({
   // Handle close button click with smooth animation
   const handleCloseButtonClick = () => {
     handleClose();
-  };
-
-  const handleDragEnd = (
-    //@ts-ignore
-    event: MouseEvent | TouchEvent | PointerEvent,
-    info: PanInfo
-  ) => {
-    const shouldClose = info.offset.y > dragThreshold || info.velocity.y > 500;
-
-    if (shouldClose) {
-      handleClose();
-    } else {
-      // Smoothly return to original position
-      dragY.set(0);
-    }
-  };
-
-  const handleDrag = (
-    //@ts-ignore
-    event: MouseEvent | TouchEvent | PointerEvent,
-    info: PanInfo
-  ) => {
-    // Only allow dragging down
-    const newY = Math.max(0, info.offset.y);
-    dragY.set(newY);
   };
 
   return (
@@ -356,8 +304,6 @@ function ThreadReplyModal({
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  onFocus={() => setIsInputFocused(true)}
-                  onBlur={() => setIsInputFocused(false)}
                   placeholder="Reply to thread..."
                   disabled={isSending || isClosing}
                   rows={1}
