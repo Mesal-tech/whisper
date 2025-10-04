@@ -178,21 +178,10 @@ function Rooms() {
 
   return (
     <div className="h-screen text-white flex flex-col">
-      {/* Fixed Header */}
-      <div className="h-[4rem] bg-[#111111] flex items-center justify-between p-4 border-b border-gray-800 sticky top-0 z-10">
-        <div className="flex items-center">
-          <h1 className="text-3xl font-semibold">Rooms</h1>
-        </div>
-        <button
-          className="text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-gray-800"
-          onClick={() => setShowModal(true)}
-        >
-          <FiPlus size={24} />
-        </button>
-      </div>
+
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto h-full">
+      <div className="flex-1 h-full">
         {isLoading && rooms.length === 0 ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
@@ -200,7 +189,20 @@ function Rooms() {
         ) : hasRooms ? (
           <div className="flex w-full h-full">
             {/* Rooms list */}
-            <div className="md:max-w-[20rem] w-full">
+            <div className="md:max-w-[20rem] w-full h-full pb-[7rem] md:pb-[4rem] overflow-y-auto">
+              {/* Fixed Header */}
+              <div className="h-[4rem] bg-[#111111] flex items-center justify-between p-4 border-b border-gray-800 w-full sticky top-0 z-10">
+                <div className="flex items-center">
+                  <h1 className="text-3xl font-semibold">Rooms</h1>
+                </div>
+                <button
+                  className="text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-gray-800"
+                  onClick={() => setShowModal(true)}
+                >
+                  <FiPlus size={24} />
+                </button>
+              </div>
+
               {/* Error Display */}
               {error && (
                 <div className="bg-red-900/20 border border-red-500/30 text-red-300 p-3 m-4 rounded-lg shadow-sm">
@@ -221,17 +223,31 @@ function Rooms() {
 
             {/* Message Box */}
             <div
-              className={`${
-                id
-                  ? "fixed md:static z-10 top-0 left-0"
-                  : "hidden md:flex items-center justify-center"
-              } w-full bg-[#111111] md:bg-white/5 h-full`}
+              className={`${id
+                ? "fixed md:sticky z-10 top-0 left-0"
+                : "hidden md:flex items-center justify-center"
+                } w-full bg-[#111111] md:bg-white/5 h-full`}
             >
               {id ? <Outlet /> : <p>Select a conversation to start talking</p>}
             </div>
           </div>
         ) : (
-          <EmptyRooms />
+          <div className="h-full relative">
+            {/* Header */}
+            <div className="h-[4rem] bg-[#111111] flex items-center justify-between p-4 border-b border-gray-800 w-full absolute top-0 z-10">
+              <div className="flex items-center">
+                <h1 className="text-3xl font-semibold">Rooms</h1>
+              </div>
+              <button
+                className="text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-gray-800"
+                onClick={() => setShowModal(true)}
+              >
+                <FiPlus size={24} />
+              </button>
+            </div>
+
+            <EmptyRooms />
+          </div>
         )}
       </div>
 
@@ -239,9 +255,8 @@ function Rooms() {
       <AnimatePresence>
         {showModal && (
           <motion.div
-            className={`fixed inset-0 bg-black/40  z-[60] flex ${
-              isMobile ? "items-end" : "items-center"
-            } justify-center backdrop-blur-sm`}
+            className={`fixed inset-0 bg-black/40  z-[60] flex ${isMobile ? "items-end" : "items-center"
+              } justify-center backdrop-blur-sm`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -249,11 +264,9 @@ function Rooms() {
             onClick={closeModal}
           >
             <motion.div
-              className={`bg-black/50 backdrop-blur-sm border border-white/10 hover:border-white/20 hover:bg-black/10 transition-all duration-500 overflow-hidden w-full max-w-lg ${
-                isMobile ? "rounded-t-3xl h-[40rem]" : "rounded-2xl"
-              } p-6 shadow-2xl ring-1 ring-gray-800/50 ${
-                isMobile ? "touch-pan-y" : ""
-              }`}
+              className={`bg-black/50 backdrop-blur-sm border border-white/10 hover:border-white/20 hover:bg-black/10 transition-all duration-500 overflow-hidden w-full max-w-lg ${isMobile ? "rounded-t-3xl h-[40rem]" : "rounded-2xl"
+                } p-6 shadow-2xl ring-1 ring-gray-800/50 ${isMobile ? "touch-pan-y" : ""
+                }`}
               initial={isMobile ? { y: "100%" } : { scale: 0.95, opacity: 0 }}
               animate={isMobile ? { y: 0 } : { scale: 1, opacity: 1 }}
               exit={isMobile ? { y: "100%" } : { scale: 0.95, opacity: 0 }}

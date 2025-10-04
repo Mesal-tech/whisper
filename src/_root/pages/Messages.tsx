@@ -328,37 +328,33 @@ function Messages() {
   }
 
   return (
-    <div className="h-screen bg-[#111111]">
+    <div className="h-screen">
       <Header />
-      <main className="max-w-7xl mx-auto px-4 mt-10 md:mt-0 sm:px-6 lg:px-8 py-16 md: py-6">
-        <div className="bg-[#2D2D30] border border-gray-700 rounded-lg shadow p-4 mb-4">
-          <div className="flex items-center mb-2">
+      <main className="overflow-y-auto h-full max-w-7xl mx-auto px-4 mt-10 md:mt-0 sm:px-6 lg:px-8 py-8 pb-[9rem] md:py-6">
+        <div className="bg-[#111111] pb-2 sticky top-0 left-0 flex items-center justify-between mb-6">
+          <div className="flex items-center">
             <HiOutlineMail className="w-10 h-10 text-purple-500 mr-2" />
             <h2 className="text-2xl font-semibold text-white">Your Messages</h2>
           </div>
-          <p className="text-gray-400 text-md mb-4">
-            Connect and respond to your incoming messages
-          </p>
           <div className="flex space-x-2">
             <button
               onClick={handleRefresh}
-              className="bg-gray-800 text-white text-md py-1 px-3 rounded-full hover:bg-gray-700 transition-colors duration-200 flex items-center"
+              className="bg-white/5 w-8 h-8 cursor-pointer text-md rounded-full hover:bg-white/10 border border-white/10 group-hover:bg-white/10 transition-colors duration-200 flex items-center justify-center"
             >
-              <HiOutlineRefresh className="w-6 h-6 mr-1" />
-              Refresh
+              <HiOutlineRefresh className="w-4 h-4 text-gray-300" />
             </button>
             <button
               onClick={handleShare}
-              className="bg-purple-500 text-white text-md py-1 px-3 rounded-full hover:bg-purple-600 transition-colors duration-200 flex items-center"
+              className="bg-white/5 w-8 h-8 cursor-pointer text-md rounded-full hover:bg-white/10 border border-white/10 group-hover:bg-white/10 transition-colors duration-200 flex items-center justify-center"
             >
-              <HiOutlineShare className="w-6 h-6 mr-1" />
-              Share Profile
+              <HiOutlineShare className="w-4 h-4 text-gray-300" />
             </button>
           </div>
         </div>
-        <div className="max-h-96 overflow-y-auto space-y-4">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 space-4">
           {messages?.length === 0 ? (
-            <div className="bg-[#2D2D30] border border-gray-700 rounded-lg shadow p-4 text-center">
+            <div className="bg-white/5 border border-white/10 rounded-lg shadow p-4 text-center">
               <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
                 <HiOutlineMail className="w-8 h-8 text-gray-400" />
               </div>
@@ -374,7 +370,7 @@ function Messages() {
             messages?.map((message) => (
               <div
                 key={message.id}
-                className="bg-[#2D2D30] border border-gray-700 rounded-lg shadow p-4 flex items-start justify-between"
+                className="bg-white/5 border border-white/10 rounded-lg shadow p-4 flex items-start justify-between"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-row space-x-2">

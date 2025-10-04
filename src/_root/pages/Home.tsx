@@ -2,7 +2,6 @@ import Header from "../../components/Header";
 import {
   useUserStore,
   useUsername,
-  useUserAvatar,
 } from "../../store/userStore"; // Adjust path as needed
 import { useEffect } from "react";
 import { IoCopy } from "react-icons/io5";
@@ -11,8 +10,6 @@ import { motion } from "framer-motion";
 function Home() {
   const userName = useUsername();
   const userId = useUserStore((state) => state.user?.id);
-  const avatar = useUserAvatar();
-  const totalPoints = useUserStore((state) => state.user?.totalPoints || 0);
   const fetchUser = useUserStore((state) => state.fetchUser);
 
   useEffect(() => {
@@ -60,7 +57,7 @@ function Home() {
   };
 
   return (
-    <div className="w-full flex flex-col items-center justify-center h-screen">
+    <div className="w-full flex flex-col items-center justify-center h-full">
       <Header />
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
@@ -83,21 +80,20 @@ function Home() {
             <div className="relative">
               {/* Gradient background behind image - perfectly sized */}
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-lg scale-96"></div>
-              <img
-                src={avatar || "/assets/icons/profile-placeholder.svg"}
-                alt={`${userName || "Anonymous"}'s Avatar`}
-                className="w-30 h-30 rounded-full  shadow-2xl relative z-10"
-              />
+
+              <div className="w-30 h-30 rounded-full overflow-hidden shadow-2xl relative z-10">
+                <img
+                  src="/assets/images/shh.jpeg"
+                  alt={`${userName || "Anonymous"}'s Avatar`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
           </div>
 
           <h2 className="text-2xl font-bold text-white mb-2">
             {userName || "Anonymous"}
           </h2>
-
-          <p className="text-xl text-purple-300 mb-4">
-            Total Points: {totalPoints}
-          </p>
 
           {/* URL with copy button */}
           <div className="flex items-center text-center p-2 my-2 bg-white/5 rounded-xl border border-white/10 group-hover:bg-white/10 transition-colors">

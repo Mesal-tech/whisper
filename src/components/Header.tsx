@@ -4,27 +4,26 @@ import { signOut } from "firebase/auth";
 import { MdLogout, MdClose } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
-import { useUserStore, useUsername, useUserPoints } from "../store/userStore"; // Import userStore
+import { useUserStore, useUsername, useUserPoints } from "../store/userStore";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Header() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const username = useUsername(); // Get username from userStore
-  const userPoints = useUserPoints(); // Get user points from userStore
-  const { clearUser, fetchUser, subscribeToUser } = useUserStore(); // Get userStore actions
+  const setAuthUser = useAuthStore((state) => state.setUser); // Add setUser from authStore
+  const username = useUsername();
+  const userPoints = useUserPoints();
+  const { clearUser, fetchUser, subscribeToUser } = useUserStore();
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Initialize user data when component mounts
   useEffect(() => {
     if (user && !username) {
-      // If we have auth user but no username, fetch user data
       fetchUser(user.uid);
     }
 
     if (user) {
-      // Subscribe to real-time user updates
       const unsubscribe = subscribeToUser(user.uid);
       return () => {
         if (unsubscribe) unsubscribe();
@@ -67,8 +66,9 @@ export default function Header() {
 
   const handleConfirmLogout = async () => {
     try {
-      await signOut(auth);
-      clearUser(); // Clear user data from store on logout
+      await signOut(auth); // Sign out from Firebase
+      setAuthUser(null); // Explicitly clear authStore user
+      clearUser(); // Clear userStore data
       navigate("/auth/signin");
     } catch (error) {
       console.error("Error during logout:", error);
@@ -100,12 +100,14 @@ export default function Header() {
 
               {/* Profile Picture */}
               <div className="relative">
-                <img
-                  src={user.photoURL || "https://via.placeholder.com/40"}
-                  alt={user.displayName || "User"}
-                  className="profile-image w-10 h-10 rounded-full border-2 border-gray-200 cursor-pointer hover:border-gray-300 transition-colors"
-                  onClick={() => setShowProfilePopup(!showProfilePopup)}
-                />
+                <div className="profile-image w-10 h-10 rounded-full border-2 border-white/10 cursor-pointer hover:border-white/20 transition-colors overflow-hidden">
+                  <img
+                    src="/assets/images/shh.jpeg"
+                    alt={user.displayName || "User"}
+                    className="w-full h-full object-cover"
+                    onClick={() => setShowProfilePopup(!showProfilePopup)}
+                  />
+                </div>
 
                 {/* Profile Popup */}
                 <AnimatePresence>
@@ -115,24 +117,21 @@ export default function Header() {
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -10 }}
                       transition={{ duration: 0.2, ease: "easeOut" }}
-                      className="profile-popup absolute right-0 top-12 bg-black rounded-xl shadow-lg border border-white w-70 z-50"
+                      className="profile-popup absolute right-0 top-12 bg-black/5 backdrop-blur-sm rounded-xl shadow-lg border border-white/10 w-70 z-50"
                     >
                       {/* Profile Header */}
-                      <div className="p-4 border-b">
+                      <div className="p-4 border-b border-white/10">
                         <div className="flex items-center space-x-3">
-                          <img
-                            src={
-                              user.photoURL || "https://via.placeholder.com/60"
-                            }
-                            alt="User"
-                            className="w-12 h-12 rounded-full border-2 border-gray-200"
-                          />
+                          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/10">
+                            <img
+                              src="/assets/images/shh.jpeg"
+                              alt="User"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                           <div className="flex-1">
                             <p className="text-lg font-medium text-white">
                               {username || "Loading..."}
-                            </p>
-                            <p className="text-[12px] text-gray-300 break-all">
-                              {user.email}
                             </p>
                             <p className="text-sm text-purple-400 font-medium">
                               {userPoints} points
@@ -140,18 +139,18 @@ export default function Header() {
                           </div>
                           <button
                             onClick={() => setShowProfilePopup(false)}
-                            className="p-1 bg-gray-100 rounded-full"
+                            className="p-1 bg-white/10 rounded-full"
                           >
-                            <MdClose className="w-4 h-4 text-black" />
+                            <MdClose className="w-4 h-4 text-white" />
                           </button>
                         </div>
                       </div>
 
                       {/* Logout Button */}
-                      <div className="p-4">
+                      <div className="p-2">
                         <button
                           onClick={handleLogoutClick}
-                          className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                          className="w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-300 cursor-pointer transition-colors"
                         >
                           <MdLogout className="w-4 h-4" />
                           <span>Sign Out</span>
@@ -175,7 +174,7 @@ export default function Header() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4"
+              className="fixed inset-0 bg-black/70 bg-opacity-50 z-[100] flex items-center justify-center p-4"
               onClick={handleCancelLogout}
             >
               {/* Modal */}
@@ -184,7 +183,7 @@ export default function Header() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
-                className="bg-black rounded-lg shadow-xl max-w-md w-full border border-white"
+                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 h-fit hover:border-white/20 transition-all duration-500 overflow-hidden shadow-xl max-w-md w-full"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Modal Header */}
@@ -205,13 +204,13 @@ export default function Header() {
                 <div className="px-6 pb-6 flex space-x-3">
                   <button
                     onClick={handleCancelLogout}
-                    className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                    className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full cursor-pointer transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleConfirmLogout}
-                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-full cursor-pointer transition-colors"
                   >
                     Sign Out
                   </button>

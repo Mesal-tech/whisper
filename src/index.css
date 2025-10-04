@@ -2,8 +2,26 @@
 
 body {
   font-family: "Caveat Brush";
+  overflow: hidden;
 }
 
 /* body {
   font-family: "Jost";
 } */
+
+*::-webkit-scrollbar {
+  width: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #232424;
+  border-radius: 2px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #4b5563;
+}

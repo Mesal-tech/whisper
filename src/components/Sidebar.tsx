@@ -19,6 +19,7 @@ const tabs = [
 export default function Sidebar() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+  const setAuthUser = useAuthStore((state) => state.setUser); // Add setUser from authStore
   const username = useUsername(); // Get username from userStore
   const userPoints = useUserPoints(); // Get user points from userStore
   const { clearUser, fetchUser, subscribeToUser } = useUserStore(); // Get userStore actions
@@ -46,8 +47,9 @@ export default function Sidebar() {
 
   const handleConfirmLogout = async () => {
     try {
-      await signOut(auth);
-      clearUser(); // Clear user data from store on logout
+      await signOut(auth); // Sign out from Firebase
+      setAuthUser(null); // Explicitly clear authStore user
+      clearUser(); // Clear userStore data
       navigate("/auth/signin");
     } catch (error) {
       console.error("Error during logout:", error);
@@ -80,10 +82,9 @@ export default function Sidebar() {
               key={tab.path}
               to={tab.path}
               className={({ isActive }) =>
-                `flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 group hover:bg-gray-800 ${
-                  isActive
-                    ? "bg-white/10 text-white shadow-lg"
-                    : "text-gray-400 hover:text-white"
+                `flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 group hover:bg-gray-800 ${isActive
+                  ? "bg-white/10 text-white shadow-lg"
+                  : "text-gray-400 hover:text-white"
                 }`
               }
             >
@@ -96,12 +97,14 @@ export default function Sidebar() {
         {/* Bottom Section - User Profile */}
         <div className="mt-auto w-full space-y-3">
           {/* User Info */}
-          <div className="p-3 bg-gray-800/50 rounded-xl flex items-center gap-3">
-            <img
-              src={user?.photoURL || "https://via.placeholder.com/60"}
-              alt="User"
-              className="w-12 h-12 rounded-full border-2 border-gray-200"
-            />
+          <div className="p-3 bg-white/5 rounded-xl flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/10">
+              <img
+                src="/assets/images/shh.jpeg"
+                alt="User"
+                className="w-full h-full object-cover"
+              />
+            </div>
             <div className="flex flex-col overflow-hidden">
               <p className="text-sm font-semibold text-white truncate">
                 {username || "Loading..."}
@@ -115,7 +118,7 @@ export default function Sidebar() {
           {/* Logout Button */}
           <button
             onClick={handleLogoutClick}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-red-400 bg-red-900/20 hover:bg-red-900/30 rounded-xl transition-all duration-200 border border-red-900/30 hover:border-red-900/50"
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 rounded-xl transition-all duration-200 cursor-pointer"
           >
             <MdLogout className="w-4 h-4" />
             <span>Sign Out</span>
@@ -132,7 +135,7 @@ export default function Sidebar() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4"
+              className="fixed inset-0 bg-black/70 bg-opacity-50 z-[100] flex items-center justify-center p-4"
               onClick={handleCancelLogout}
             >
               {/* Modal */}
@@ -141,7 +144,7 @@ export default function Sidebar() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
-                className="bg-black rounded-lg shadow-xl max-w-md w-full border border-white"
+                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 h-fit hover:border-white/20 transition-all duration-500 overflow-hidden shadow-xl max-w-md w-full"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Modal Header */}
@@ -162,13 +165,13 @@ export default function Sidebar() {
                 <div className="px-6 pb-6 flex space-x-3">
                   <button
                     onClick={handleCancelLogout}
-                    className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                    className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full cursor-pointer transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleConfirmLogout}
-                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-full cursor-pointer transition-colors"
                   >
                     Sign Out
                   </button>
