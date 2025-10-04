@@ -35,8 +35,8 @@ function Home() {
 
   const handleShare = async () => {
     const shareData = {
-      title: `${userName || "Anonymous"}'s Profile`,
-      text: `Check out ${userName || "Anonymous"}'s profile!`,
+      title: "Anonymous Profile",
+      text: `Check out Anonymous profile!`,
       url: profileUrl,
     };
 

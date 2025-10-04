@@ -376,7 +376,7 @@ function RoomChat() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-[#111111] z-50 flex flex-col items-center justify-center p-4"
+            className="fixed inset-0 bg-white/5 z-50 flex flex-col items-center justify-center p-4"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
@@ -422,7 +422,7 @@ function RoomChat() {
                 </motion.button>
                 <motion.button
                   onClick={handleJoinGroup}
-                  className="flex-1 py-4 px-6 bg-blue-600/80 text-white rounded-xl hover:bg-blue-700/80 transition-all duration-200 shadow-lg hover:shadow-blue-500/20 border border-blue-500/30 backdrop-blur-sm"
+                  className="flex-1 py-4 px-6 bg-putple-600/80 text-white rounded-xl hover:bg-putple-700/80 transition-all duration-200 shadow-lg hover:shadow-putple-500/20 border border-putple-500/30 backdrop-blur-sm"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -628,7 +628,7 @@ function RoomChat() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <span className="mr-3 text-blue-400">🔗</span>
+                  <span className="mr-3 text-putple-400">🔗</span>
                   Share Room Link
                 </motion.button>
               </div>
