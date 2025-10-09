@@ -24,14 +24,13 @@ import { useUserStore } from "@/store/userStore";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import generateRandomUsername from "@/lib/utils/generateUsername";
+import { FirebaseError } from "firebase/app"; // <-- import the FirebaseError type
 
-// ✅ Firebase User type (optional, TS only)
-// import type { User } from "@/types";
-
-async function processErrorMessage(error: unknown, email: string | undefined) {
-  if (error instanceof Error) {
-    const firebaseError = error;
-    switch (firebaseError.code) {
+// If you want to narrow message type return explicitly
+async function processErrorMessage(error: unknown, email?: string): Promise<string> {
+  // Prefer handling FirebaseError explicitly
+  if (error instanceof FirebaseError) {
+    switch (error.code) {
       case "auth/invalid-email":
         return "The email address is not valid. Please check and try again.";
       case "auth/user-not-found":
@@ -60,9 +59,16 @@ async function processErrorMessage(error: unknown, email: string | undefined) {
       case "auth/popup-closed-by-user":
         return "The sign-in popup was closed. Please try again.";
       default:
-        return firebaseError.message || "An error occurred. Please try again.";
+        return error.message || "An error occurred. Please try again.";
     }
   }
+
+  // If it's a regular Error, return the message.
+  if (error instanceof Error) {
+    return error.message || "An error occurred. Please try again.";
+  }
+
+  // Unknown error shape — return a safe generic message.
   return "An unexpected error occurred. Please try again.";
 }
 
@@ -80,11 +86,12 @@ export default function Signin() {
   const setAuthUser = useAuthStore((state) => state.setUser);
   const { setUser, subscribeToUser } = useUserStore();
 
-  const handleUserSetup = async (firebaseUser: User | null) => {
+  // Note: make firebaseUser typed as User (non-null) — callers already ensure user exists
+  const handleUserSetup = async (firebaseUser: User) => {
     try {
       const userRef = doc(db, "users", firebaseUser.uid);
       const userDoc = await getDoc(userRef);
-      let userData;
+      let userData: any;
 
       if (!userDoc.exists()) {
         userData = {
@@ -125,7 +132,8 @@ export default function Signin() {
       router.push("/");
     } catch (err) {
       console.error("Error during user setup:", err);
-      toast.error(await processErrorMessage(err));
+      const message = await processErrorMessage(err);
+      toast.error(message);
     }
   };
 
@@ -133,7 +141,8 @@ export default function Signin() {
     setLoadingStates((p) => ({ ...p, google: true }));
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      await handleUserSetup(result.user);
+      // result.user is typed by firebase as User
+      await handleUserSetup(result.user as User);
     } catch (err) {
       console.error("Google login error:", err);
       toast.error(await processErrorMessage(err));
@@ -142,17 +151,17 @@ export default function Signin() {
     }
   };
 
-  const handleEmailLogin = async (e: { preventDefault: () => void; }) => {
+  const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoadingStates((p) => ({ ...p, email: true }));
     try {
       let result;
       if (isSignUp)
         result = await createUserWithEmailAndPassword(auth, email, password);
-      else
-        result = await signInWithEmailAndPassword(auth, email, password);
+      else result = await signInWithEmailAndPassword(auth, email, password);
 
-      await handleUserSetup(result.user);
+      // result.user is a User
+      await handleUserSetup(result.user as User);
     } catch (err) {
       console.error("Email login error:", err);
       toast.error(await processErrorMessage(err, email));
@@ -164,7 +173,7 @@ export default function Signin() {
   const handlePasskeyLogin = async () => {
     setLoadingStates((p) => ({ ...p, passkey: true }));
     try {
-      if (!window.PublicKeyCredential)
+      if (typeof window === "undefined" || !window.PublicKeyCredential)
         throw new Error("Passkeys not supported by this browser");
 
       let firebaseUser = auth.currentUser;
@@ -172,9 +181,10 @@ export default function Signin() {
       if (!firebaseUser) {
         const anonResult = await signInAnonymously(auth);
         firebaseUser = anonResult.user;
-        await handleUserSetup(firebaseUser);
+        if (!firebaseUser) throw new Error("Failed to create anonymous user");
+        await handleUserSetup(firebaseUser as User);
       } else {
-        await handleUserSetup(firebaseUser);
+        await handleUserSetup(firebaseUser as User);
       }
     } catch (err) {
       console.error("Passkey login error:", err);
@@ -287,7 +297,6 @@ export default function Signin() {
               </span>
             </div>
           </motion.button>
-
         </div>
       </div>
     </div>
