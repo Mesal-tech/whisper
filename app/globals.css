@@ -1,10 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat+Brush&display=swap');
 @import "tailwindcss";
 
 body {
   font-family: "Caveat Brush";
-  overflow: hidden;
 }
 
+.caveat-brush {
+  font-family: "Caveat Brush", cursive;
+}
 /* body {
   font-family: "Jost";
 } */

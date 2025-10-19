@@ -51,7 +51,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className="caveat-brush">
         {children}
         <ToastContainer
           position="top-right"
