@@ -13,7 +13,7 @@ import emptyRoomImage from "@/public/assets/images/empty-folder.png";
 import bgImage from "@/public/assets/images/shh.jpeg";
 
 // ✅ SEO (App Router)
-export const metadata: Metadata = {
+const metadata: Metadata = {
   title: "Rooms | Connect & Chat",
   description:
     "Discover or create rooms to chat with like-minded people on Tovira. Real-time conversations, clean design, and endless connections.",
