@@ -70,7 +70,11 @@ const RoomItem = ({ room, onClick }: { room: Room; onClick: () => void }) => (
   </motion.div>
 );
 
-export default function RoomsPage() {
+export default function RoomsLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string | undefined;
@@ -181,7 +185,7 @@ export default function RoomsPage() {
                 } w-full bg-[#111111] md:bg-white/5 h-full`}
             >
               {id ? (
-                <p>Loading room...</p> // replaced <Outlet />
+                <>{children}</>
               ) : (
                 <p>Select a conversation to start talking</p>
               )}
