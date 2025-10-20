@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { FiPlus, FiX } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,18 +8,40 @@ import { useAuthStore } from "@/store/authStore";
 import { useRoomStore } from "@/store/roomStore";
 import type { Room } from "@/types";
 import Image from "next/image";
+import { Metadata } from "next";
 import emptyRoomImage from "@/public/assets/images/empty-folder.png";
 import bgImage from "@/public/assets/images/shh.jpeg";
 
+// ✅ SEO (App Router)
+export const metadata: Metadata = {
+  title: "Rooms | Connect & Chat",
+  description:
+    "Discover or create rooms to chat with like-minded people on Tovira. Real-time conversations, clean design, and endless connections.",
+  openGraph: {
+    title: "Rooms | Tovira",
+    description: "Create or join rooms to chat in real time.",
+    images: ["/assets/images/shh.jpeg"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Rooms | Tovira",
+    description: "Create or join rooms to chat in real time.",
+    images: ["/assets/images/shh.jpeg"],
+  },
+};
+
 const EmptyRooms = () => (
-  <div className="flex flex-col items-center justify-center h-full">
+  <div className="flex flex-col items-center justify-center h-full text-center px-4">
     <Image
       src={emptyRoomImage}
       alt="No rooms found"
-      className="w-40 h-40 mb-6 opacity-70"
+      width={160}
+      height={160}
+      className="opacity-70 mb-6"
+      priority={false}
     />
     <h3 className="text-xl font-medium mb-2">No Rooms Found</h3>
-    <p className="text-sm text-center max-w-xs text-gray-300">
+    <p className="text-sm text-gray-400 max-w-xs">
       Start by creating your first room to connect and chat with like-minded
       people.
     </p>
@@ -27,8 +49,7 @@ const EmptyRooms = () => (
 );
 
 function timeAgo(date: Date): string {
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
+  const diff = Date.now() - date.getTime();
   const seconds = Math.floor(diff / 1000);
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
@@ -37,28 +58,31 @@ function timeAgo(date: Date): string {
   if (hours < 24) return `${hours}h`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d`;
-  const weeks = Math.floor(days / 7);
-  return `${weeks}w`;
+  return `${Math.floor(days / 7)}w`;
 }
 
 const RoomItem = ({ room, onClick }: { room: Room; onClick: () => void }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.3 }}
+    transition={{ duration: 0.25 }}
     className="flex items-center p-4 hover:bg-gray-800/50 cursor-pointer transition-colors duration-200 rounded-lg mx-2 my-1 shadow-sm hover:shadow-md"
     onClick={onClick}
+    role="button"
+    aria-label={`Open ${room.name}`}
   >
     <div
-      className="w-14 h-14 rounded-full flex items-center justify-center text-white font-semibold text-xl mr-4 bg-cover bg-center shrink-0 ring-1 ring-gray-700"
+      className="w-14 h-14 rounded-full flex items-center justify-center mr-4 bg-cover bg-center shrink-0 ring-1 ring-gray-700"
       style={{ backgroundImage: `url(${bgImage.src})` }}
     ></div>
 
     <div className="flex-1 min-w-0">
       <div className="flex items-center justify-between mb-1">
-        <h3 className="text-white font-medium truncate text-xl">{room.name}</h3>
-        <span className="text-gray-400 text-md ml-2 shrink-0">
-          {room.timestamp && room.timestamp.toDate
+        <h3 className="text-white font-medium truncate text-xl">
+          {room.name}
+        </h3>
+        <span className="text-gray-400 text-sm ml-2 shrink-0">
+          {room.timestamp?.toDate
             ? timeAgo(room.timestamp.toDate())
             : "Just now"}
         </span>
@@ -95,15 +119,17 @@ export default function RoomsLayout({
     clearRooms,
   } = useRoomStore();
 
-  const hasRooms = rooms.length > 0;
+  const hasRooms = useMemo(() => rooms.length > 0, [rooms]);
 
+  // ✅ Handle screen resize efficiently
   useEffect(() => {
-    setIsMobile(window.innerWidth < 768);
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    const updateScreen = () => setIsMobile(window.innerWidth < 768);
+    updateScreen();
+    window.addEventListener("resize", updateScreen);
+    return () => window.removeEventListener("resize", updateScreen);
   }, []);
 
+  // ✅ Auth & room subscription
   useEffect(() => {
     if (!user) {
       router.push("/auth/signin");
@@ -117,12 +143,13 @@ export default function RoomsLayout({
     if (!user) clearRooms();
   }, [user, clearRooms]);
 
-  const handleCreateRoom = async () => {
-    if (!roomName || !roomBio || !user) return;
+  // ✅ Room creation logic (memoized)
+  const handleCreateRoom = useCallback(async () => {
+    if (!roomName.trim() || !roomBio.trim() || !user) return;
     try {
       await createRoom({
-        name: roomName,
-        bio: roomBio,
+        name: roomName.trim(),
+        bio: roomBio.trim(),
         creatorId: user.uid,
       });
       setShowModal(false);
@@ -131,13 +158,13 @@ export default function RoomsLayout({
     } catch (err) {
       console.error("Error creating room:", err);
     }
-  };
+  }, [roomName, roomBio, user, createRoom]);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setShowModal(false);
     setRoomName("");
     setRoomBio("");
-  };
+  }, []);
 
   return (
     <div className="h-screen text-white flex flex-col">
@@ -148,13 +175,14 @@ export default function RoomsLayout({
           </div>
         ) : hasRooms ? (
           <div className="flex w-full h-full">
-            {/* Rooms list */}
+            {/* Rooms List */}
             <div className="md:max-w-[20rem] w-full h-full pb-[7rem] md:pb-[4rem] overflow-y-auto">
-              <div className="h-[4rem] bg-[#111111] flex items-center justify-between p-4 border-b border-gray-800 w-full sticky top-0 z-10">
+              <div className="h-[4rem] bg-[#111111] flex items-center justify-between p-4 border-b border-gray-800 sticky top-0 z-10">
                 <h1 className="text-3xl font-semibold">Rooms</h1>
                 <button
                   className="text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-gray-800"
                   onClick={() => setShowModal(true)}
+                  aria-label="Create new room"
                 >
                   <FiPlus size={24} />
                 </button>
@@ -177,7 +205,7 @@ export default function RoomsLayout({
               </div>
             </div>
 
-            {/* Message box */}
+            {/* Chat Section */}
             <div
               className={`${id
                 ? "fixed md:sticky z-10 top-0 left-0"
@@ -187,7 +215,7 @@ export default function RoomsLayout({
               {id ? (
                 <>{children}</>
               ) : (
-                <p>Select a conversation to start talking</p>
+                <p className="text-gray-400">Select a conversation to start talking</p>
               )}
             </div>
           </div>
@@ -198,17 +226,17 @@ export default function RoomsLayout({
               <button
                 className="text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-gray-800"
                 onClick={() => setShowModal(true)}
+                aria-label="Create new room"
               >
                 <FiPlus size={24} />
               </button>
             </div>
-
             <EmptyRooms />
           </div>
         )}
       </div>
 
-      {/* Modal */}
+      {/* Create Room Modal */}
       <AnimatePresence>
         {showModal && (
           <motion.div
@@ -221,7 +249,7 @@ export default function RoomsLayout({
             onClick={closeModal}
           >
             <motion.div
-              className={`bg-black/50 backdrop-blur-sm border border-white/10 hover:border-white/20 hover:bg-black/10 transition-all duration-500 overflow-hidden w-full max-w-lg ${isMobile ? "rounded-t-3xl h-[40rem]" : "rounded-2xl"
+              className={`bg-black/50 backdrop-blur-sm border border-white/10 w-full max-w-lg ${isMobile ? "rounded-t-3xl h-[40rem]" : "rounded-2xl"
                 } p-6 shadow-2xl ring-1 ring-gray-800/50`}
               initial={isMobile ? { y: "100%" } : { scale: 0.95, opacity: 0 }}
               animate={isMobile ? { y: 0 } : { scale: 1, opacity: 1 }}
@@ -233,8 +261,8 @@ export default function RoomsLayout({
                 <h2 className="text-2xl font-bold text-white">Create New Room</h2>
                 <button
                   onClick={closeModal}
-                  className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-gray-800/50 transition-all duration-200 disabled:opacity-50"
-                  disabled={isLoading}
+                  className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-gray-800/50 transition-all duration-200"
+                  aria-label="Close modal"
                 >
                   <FiX size={24} />
                 </button>
@@ -242,49 +270,50 @@ export default function RoomsLayout({
 
               <div className="mb-6 flex justify-center">
                 <div
-                  className="w-24 h-24 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden ring-2 ring-gray-700 hover:ring-purple-500 transition-all duration-200 cursor-pointer"
+                  className="w-24 h-24 rounded-full bg-gray-800 ring-2 ring-gray-700 hover:ring-purple-500 transition-all duration-200 cursor-pointer"
                   style={{
                     backgroundImage: `url(${bgImage.src})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                   }}
+                  aria-label="Room image"
                 />
               </div>
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-200 mb-2">
-                  Room Name
-                </label>
-                <input
-                  type="text"
-                  value={roomName}
-                  onChange={(e) => setRoomName(e.target.value)}
-                  placeholder="Enter a catchy name"
-                  className="bg-white/5 rounded-xl border border-white/10 p-3 w-full focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none placeholder-gray-500"
-                  disabled={isLoading}
-                />
-              </div>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-200 mb-2">
+                    Room Name
+                  </label>
+                  <input
+                    type="text"
+                    value={roomName}
+                    onChange={(e) => setRoomName(e.target.value)}
+                    placeholder="Enter a catchy name"
+                    className="bg-white/5 rounded-xl border border-white/10 p-3 w-full focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none placeholder-gray-500"
+                  />
+                </div>
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-200 mb-2">
-                  Room Bio
-                </label>
-                <textarea
-                  value={roomBio}
-                  onChange={(e) => setRoomBio(e.target.value)}
-                  placeholder="Describe your room's vibe"
-                  className="bg-white/5 rounded-xl border border-white/10 p-3 w-full h-32 resize-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none placeholder-gray-500"
-                  disabled={isLoading}
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-200 mb-2">
+                    Room Bio
+                  </label>
+                  <textarea
+                    value={roomBio}
+                    onChange={(e) => setRoomBio(e.target.value)}
+                    placeholder="Describe your room's vibe"
+                    className="bg-white/5 rounded-xl border border-white/10 p-3 w-full h-32 resize-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none placeholder-gray-500"
+                  />
+                </div>
 
-              <button
-                onClick={handleCreateRoom}
-                disabled={!roomName || !roomBio || isLoading}
-                className="w-full rounded-full bg-purple-600 text-white px-6 py-3 disabled:bg-purple-400 hover:bg-purple-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg"
-              >
-                {isLoading ? "Creating..." : "Create Room"}
-              </button>
+                <button
+                  onClick={handleCreateRoom}
+                  disabled={!roomName || !roomBio || isLoading}
+                  className="w-full rounded-full bg-purple-600 text-white px-6 py-3 disabled:bg-purple-400 hover:bg-purple-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg"
+                >
+                  {isLoading ? "Creating..." : "Create Room"}
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
