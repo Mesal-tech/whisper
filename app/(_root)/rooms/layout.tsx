@@ -12,23 +12,6 @@ import { Metadata } from "next";
 import emptyRoomImage from "@/public/assets/images/empty-folder.png";
 import bgImage from "@/public/assets/images/shh.jpeg";
 
-// ✅ SEO (App Router)
-const metadata: Metadata = {
-  title: "Rooms | Connect & Chat",
-  description:
-    "Discover or create rooms to chat with like-minded people on Tovira. Real-time conversations, clean design, and endless connections.",
-  openGraph: {
-    title: "Rooms | Tovira",
-    description: "Create or join rooms to chat in real time.",
-    images: ["/assets/images/shh.jpeg"],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Rooms | Tovira",
-    description: "Create or join rooms to chat in real time.",
-    images: ["/assets/images/shh.jpeg"],
-  },
-};
 
 const EmptyRooms = () => (
   <div className="flex flex-col items-center justify-center h-full text-center px-4">
